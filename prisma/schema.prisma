@@ -1,0 +1,289 @@
+// Prisma schema for LSP Workshop App
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+}
+
+enum WorkshopStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+enum SessionPhase {
+  BUILD
+  DISCUSS
+  PAUSED
+  TRANSITION
+  COMPLETE
+}
+
+enum ChecklistType {
+  PREP
+  SESSION
+  WRAP
+}
+
+enum TimelineKind {
+  SESSION
+  BREAK
+  CHECKIN
+  CUSTOM
+}
+
+enum DisplayMode {
+  STANDARD
+  FOCUS
+  PAUSE
+}
+
+enum AlarmTone {
+  TONE_A
+  TONE_B
+  TONE_C
+  CUSTOM
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  emailVerified  DateTime?
+  hashedPassword String
+  role           Role      @default(ADMIN)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts  Account[]
+  sessions  Session[]
+  blogPosts BlogPost[]
+}
+
+model Workshop {
+  id               String         @id @default(cuid())
+  title            String
+  date             DateTime
+  description      String?
+  themeColor       String?
+  facilitatorName  String?
+  facilitatorTitle String?
+  viewerPin        String?        @unique
+  status           WorkshopStatus @default(DRAFT)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  sessions        WorkshopSession[]
+  checklists      ChecklistItem[]
+  aiReports       AIReport[]
+  alarmSetting    AlarmSetting?
+  runOfShowEvents RunOfShowEvent[]
+  workshopState   WorkshopState?
+}
+
+model WorkshopSession {
+  id                 String   @id @default(cuid())
+  workshopId         String
+  order              Int
+  title              String
+  assignmentMarkdown String
+  buildDurationSec   Int
+  discussDurationSec Int
+  themeColor         String?
+  facilitatorNotes   String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  workshop       Workshop        @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  uploads        BuildUpload[]
+  state          SessionState?
+  checklistItems ChecklistItem[]
+}
+
+model SessionState {
+  id               String       @id @default(cuid())
+  sessionId        String       @unique
+  phase            SessionPhase @default(BUILD)
+  remainingSeconds Int
+  isRunning        Boolean      @default(false)
+  alarmMuted       Boolean      @default(false)
+  autoAdvance      Boolean      @default(true)
+  lastActionBy     String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  session WorkshopSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model BuildUpload {
+  id          String   @id @default(cuid())
+  sessionId   String
+  storagePath String
+  title       String?
+  tags        String[] @default([])
+  notes       String?
+  uploadedBy  String?
+  createdAt   DateTime @default(now())
+
+  session WorkshopSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model ChecklistItem {
+  id         String        @id @default(cuid())
+  workshopId String
+  sessionId  String?
+  type       ChecklistType
+  label      String
+  isChecked  Boolean       @default(false)
+  order      Int
+  notes      String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  workshop Workshop         @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  session  WorkshopSession? @relation(fields: [sessionId], references: [id])
+}
+
+model AIReport {
+  id           String   @id @default(cuid())
+  workshopId   String
+  summary      String
+  metaphors    String[] @default([])
+  prompts      Json
+  generatedAt  DateTime @default(now())
+  modelVersion String?
+
+  workshop Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+}
+
+model AlarmSetting {
+  id              String    @id @default(cuid())
+  workshopId      String    @unique
+  volume          Int       @default(80)
+  tone            AlarmTone @default(TONE_A)
+  customTonePath  String?
+  preAlertFiveMin Boolean   @default(false)
+  preAlertOneMin  Boolean   @default(true)
+  preAlertTenSec  Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  workshop Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model RunOfShowEvent {
+  id          String       @id @default(cuid())
+  workshopId  String
+  kind        TimelineKind @default(CUSTOM)
+  title       String
+  description String?
+  startsAt    DateTime
+  durationSec Int?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workshop Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+}
+
+model WorkshopState {
+  id              String      @id @default(cuid())
+  workshopId      String      @unique
+  activeSlide     Int         @default(0)
+  activeSessionId String?
+  displayMode     DisplayMode @default(STANDARD)
+  lastBroadcastAt DateTime?   @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  workshop Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+}
+
+model BlogPost {
+  id               String     @id @default(cuid())
+  title            String
+  slug             String     @unique
+  excerpt          String?
+  content          String
+  coverImage       String?
+  focusKeyphrase   String
+  metaTitle        String
+  metaDescription  String
+  tags             String?
+  midjourneyPrompt String?
+  sourceLink       String?
+  toneOfVoice      String?
+  goal             String?
+  primaryKeyword   String
+  extraKeywords    String?
+  status           BlogStatus @default(DRAFT)
+  publishedAt      DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  authorId         String?
+
+  author User? @relation(fields: [authorId], references: [id])
+}
+
+model QuoteRequest {
+  id               String   @id @default(cuid())
+  name             String
+  email            String
+  company          String?
+  phone            String?
+  participantCount Int?
+  datePreference   String?
+  locationOption   String?
+  goals            String?
+  activityType     String?
+  notes            String?
+  privacyAccepted  Boolean  @default(false)
+  createdAt        DateTime @default(now())
+}

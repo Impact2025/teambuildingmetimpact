@@ -8,6 +8,13 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      colors: {
+        accent: {
+          DEFAULT: "#83C5BE",
+          soft: "#E0F2EF",
+          deep: "#5BA39D",
+        },
+      },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":

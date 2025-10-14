@@ -1,6 +1,10 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const BUCKET = "workshop-uploads";
+export const WORKSHOP_UPLOAD_BUCKET = "workshop-uploads";
+
+export function normaliseUploadFileName(name: string) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "-");
+}
 
 export async function getUploadSignedUrl(path: string) {
   let supabase;
@@ -10,7 +14,7 @@ export async function getUploadSignedUrl(path: string) {
     throw new Error("Supabase opslag is niet geconfigureerd");
   }
   const { data, error } = await supabase.storage
-    .from(BUCKET)
+    .from(WORKSHOP_UPLOAD_BUCKET)
     .createSignedUrl(path, 60 * 60);
 
   if (error || !data?.signedUrl) {

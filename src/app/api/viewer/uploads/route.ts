@@ -1,7 +1,6 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireAdmin } from "@/actions/helpers";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -12,9 +11,25 @@ import {
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
-  await requireAdmin();
-
   const formData = await request.formData();
+
+  const pin = formData.get("pin")?.toString();
+  if (!pin) {
+    return NextResponse.json({ error: "Pincode ontbreekt" }, { status: 400 });
+  }
+
+  const workshop = await prisma.workshop.findUnique({
+    where: { viewerPin: pin },
+    include: {
+      sessions: {
+        select: { id: true },
+      },
+    },
+  });
+
+  if (!workshop) {
+    return NextResponse.json({ error: "Onbekende pincode" }, { status: 403 });
+  }
 
   const file = formData.get("file");
   if (!(file instanceof File)) {
@@ -30,13 +45,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Sessiereferentie ontbreekt" }, { status: 400 });
   }
 
-  const session = await prisma.workshopSession.findUnique({
-    where: { id: sessionId },
-    select: { workshopId: true },
-  });
+  const belongsToWorkshop = workshop.sessions.some(
+    (session) => session.id === sessionId
+  );
 
-  if (!session) {
-    return NextResponse.json({ error: "Sessie niet gevonden" }, { status: 404 });
+  if (!belongsToWorkshop) {
+    return NextResponse.json({ error: "Sessie hoort niet bij deze workshop" }, { status: 403 });
   }
 
   let supabase;
@@ -48,7 +62,7 @@ export async function POST(request: NextRequest) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const key = `${session.workshopId}/${sessionId}/${Date.now()}-${normaliseUploadFileName(
+  const key = `${workshop.id}/${sessionId}/${Date.now()}-${normaliseUploadFileName(
     file.name
   )}`;
 
@@ -77,6 +91,7 @@ export async function POST(request: NextRequest) {
       title: formData.get("title")?.toString() ?? null,
       tags,
       notes: formData.get("notes")?.toString() ?? null,
+      uploadedBy: formData.get("uploadedBy")?.toString() ?? "viewer",
     },
   });
 

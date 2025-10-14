@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { PresenterScreen } from "@/components/presenter/presenter-screen";
 import { WorkshopRealtimeBridge } from "@/components/realtime/workshop-realtime-bridge";
+import { ViewerUploadShortcut } from "@/components/viewer/viewer-upload-shortcut";
 import { prisma } from "@/lib/prisma";
 import { getWorkshopLiveState } from "@/lib/workshop/state";
 
@@ -36,6 +37,7 @@ export default async function ViewerWorkshopPage({ params }: ViewerWorkshopPageP
         role="viewer"
       />
       <PresenterScreen workshopTitle={workshop.title} />
+      <ViewerUploadShortcut pin={normalizedPin} />
     </>
   );
 }

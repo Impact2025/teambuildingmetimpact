@@ -2,12 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import {
-  FACILITATOR_TIPS,
-  TEAMDAY_META,
-  TEAMDAY_SESSIONS,
-  type TeamdayActivity,
-  type TeamdaySession,
+import type {
+  TeamdayActivity,
+  TeamdayProgram,
+  TeamdaySession,
 } from "@/lib/teamday-program";
 
 type TimerOption = {
@@ -75,24 +73,56 @@ function buildTimerOptions(session: TeamdaySession): TimerOption[] {
   return base;
 }
 
-export function TeamdayViewer() {
-  const sessions = TEAMDAY_SESSIONS;
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeSession = sessions[activeIndex];
+type TeamdayViewerProps = {
+  program: TeamdayProgram;
+  tips: string[];
+};
 
-  const timerOptions = useMemo(() => buildTimerOptions(activeSession), [activeSession]);
-  const [selectedTimerId, setSelectedTimerId] = useState<string>(() => timerOptions[0]?.id ?? "");
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(timerOptions[0]?.durationSec ?? 0);
+export function TeamdayViewer({ program, tips }: TeamdayViewerProps) {
+  const sessions = program.sessions;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [selectedTimerId, setSelectedTimerId] = useState<string>("");
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const playlistOpenedRef = useRef(false);
   const [musicReminderActive, setMusicReminderActive] = useState(false);
   const [currentTip, setCurrentTip] = useState<string | null>(null);
 
+  const hasSessions = sessions.length > 0;
+  const safeIndex = hasSessions ? Math.min(activeIndex, sessions.length - 1) : 0;
+  const activeSession = hasSessions ? sessions[safeIndex] : null;
+
   useEffect(() => {
+    if (!hasSessions) {
+      setActiveIndex(0);
+      return;
+    }
+    if (activeIndex > sessions.length - 1) {
+      setActiveIndex(sessions.length - 1);
+    }
+  }, [activeIndex, hasSessions, sessions.length]);
+
+  const timerOptions = useMemo(() => {
+    if (!activeSession) {
+      return [] as TimerOption[];
+    }
+    return buildTimerOptions(activeSession);
+  }, [activeSession]);
+
+  useEffect(() => {
+    if (timerOptions.length === 0) {
+      setSelectedTimerId("");
+      setRemainingSeconds(0);
+      setRunning(false);
+      playlistOpenedRef.current = false;
+      setMusicReminderActive(false);
+      return;
+    }
+
     const firstOption = timerOptions[0];
-    setSelectedTimerId(firstOption?.id ?? "");
-    setRemainingSeconds(firstOption?.durationSec ?? 0);
+    setSelectedTimerId(firstOption.id);
+    setRemainingSeconds(firstOption.durationSec);
     setRunning(false);
     playlistOpenedRef.current = false;
     setMusicReminderActive(false);
@@ -130,12 +160,14 @@ export function TeamdayViewer() {
     };
   }, [running]);
 
-  const selectedTimer = useMemo(
-    () => timerOptions.find((option) => option.id === selectedTimerId) ?? timerOptions[0],
-    [selectedTimerId, timerOptions]
-  );
+  const selectedTimer = useMemo(() => {
+    if (timerOptions.length === 0) {
+      return null;
+    }
+    return timerOptions.find((option) => option.id === selectedTimerId) ?? timerOptions[0];
+  }, [selectedTimerId, timerOptions]);
 
-  const progress = Math.round(((activeIndex + 1) / sessions.length) * 100);
+  const progress = hasSessions ? Math.round(((safeIndex + 1) / sessions.length) * 100) : 0;
 
   const handleTimerSelection = (id: string) => {
     const option = timerOptions.find((item) => item.id === id);
@@ -156,7 +188,7 @@ export function TeamdayViewer() {
     setMusicReminderActive(true);
     if (!playlistOpenedRef.current && typeof window !== "undefined") {
       try {
-        window.open(TEAMDAY_META.playlistUrl, "_blank", "noopener,noreferrer");
+        window.open(program.meta.playlistUrl, "_blank", "noopener,noreferrer");
         playlistOpenedRef.current = true;
       } catch (error) {
         console.warn("Kon Spotify-playlist niet openen", error);
@@ -185,13 +217,27 @@ export function TeamdayViewer() {
   };
 
   const handleRandomTip = () => {
-    if (!FACILITATOR_TIPS.length) {
+    if (!tips.length) {
       setCurrentTip(null);
       return;
     }
-    const nextTip = FACILITATOR_TIPS[Math.floor(Math.random() * FACILITATOR_TIPS.length)];
+    const nextTip = tips[Math.floor(Math.random() * tips.length)];
     setCurrentTip(nextTip);
   };
+
+  if (!hasSessions) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 py-16 text-white">
+        <div className="max-w-xl rounded-3xl border border-white/10 bg-neutral-900/70 p-8 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-white/50">Teamdag viewer</p>
+          <h1 className="mt-3 text-2xl font-semibold">Geen sessies gevonden</h1>
+          <p className="mt-2 text-sm text-white/60">
+            Voeg sessies toe in het admin-dashboard onder <span className="font-semibold">Teamdag</span> om het programma hier te tonen.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
@@ -202,17 +248,17 @@ export function TeamdayViewer() {
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
                 Teambuilding met Impact – Teamdag viewer
               </p>
-              <h1 className="mt-2 text-3xl font-semibold">Programma-overzicht {TEAMDAY_META.dateLabel}</h1>
+              <h1 className="mt-2 text-3xl font-semibold">Programma-overzicht {program.meta.dateLabel}</h1>
               <p className="mt-2 text-sm text-white/60">
-                {TEAMDAY_META.organisations.join(" & ")} • Facilitator: {TEAMDAY_META.facilitator.name} ({TEAMDAY_META.facilitator.title})
+                {program.meta.organisations.join(" & ")} • Facilitator: {program.meta.facilitator.name} ({program.meta.facilitator.title})
               </p>
               <p className="text-sm text-white/60">
-                Locaties: {TEAMDAY_META.locations.join(" → ")}
+                Locaties: {program.meta.locations.join(" → ")}
               </p>
             </div>
             <div className="flex items-center gap-3 self-start rounded-2xl bg-white/5 px-4 py-3 text-sm text-white/70">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20 text-lg font-semibold text-emerald-300">
-                {activeIndex + 1}
+                {safeIndex + 1}
               </span>
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-white/40">Huidige onderdeel</p>
@@ -232,7 +278,7 @@ export function TeamdayViewer() {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="mt-2 text-right text-xs text-white/50">{activeIndex + 1} / {sessions.length} onderdelen</p>
+            <p className="mt-2 text-right text-xs text-white/50">{safeIndex + 1} / {sessions.length} onderdelen</p>
           </div>
         </header>
 
@@ -244,7 +290,7 @@ export function TeamdayViewer() {
               </p>
               <ol className="space-y-2">
                 {sessions.map((session, index) => {
-                  const isActive = index === activeIndex;
+                  const isActive = index === safeIndex;
                   return (
                     <li key={session.id}>
                       <button
@@ -277,7 +323,7 @@ export function TeamdayViewer() {
                   type="button"
                   onClick={handlePrevious}
                   className="flex-1 rounded-2xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:border-white/40 hover:bg-white/10 disabled:border-white/10 disabled:text-white/30"
-                  disabled={activeIndex === 0}
+                  disabled={safeIndex === 0}
                 >
                   Vorige
                 </button>
@@ -285,7 +331,7 @@ export function TeamdayViewer() {
                   type="button"
                   onClick={handleNext}
                   className="flex-1 rounded-2xl border border-emerald-400/60 bg-emerald-400/20 px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-100 transition hover:border-emerald-300 hover:bg-emerald-400/30 disabled:border-white/10 disabled:bg-white/5 disabled:text-white/30"
-                  disabled={activeIndex === sessions.length - 1}
+                  disabled={safeIndex === sessions.length - 1}
                 >
                   Volgende
                 </button>
@@ -298,7 +344,7 @@ export function TeamdayViewer() {
                 Start bij iedere bouwfase de afspeellijst “Teambuilding met Impact” voor extra energie.
               </p>
               <a
-                href={TEAMDAY_META.playlistUrl}
+                href={program.meta.playlistUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-3 inline-flex items-center justify-center rounded-2xl border border-emerald-400/60 bg-emerald-400/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-100 transition hover:border-emerald-300 hover:bg-emerald-400/30"
@@ -475,7 +521,7 @@ export function TeamdayViewer() {
                       Timer loopt — zet de playlist “Teambuilding met Impact” aan voor sfeer.
                     </p>
                     <a
-                      href={TEAMDAY_META.playlistUrl}
+                      href={program.meta.playlistUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-2 inline-flex items-center justify-center rounded-xl border border-emerald-400/60 bg-emerald-400/20 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-emerald-100 transition hover:border-emerald-300 hover:bg-emerald-400/30"

@@ -10,6 +10,7 @@ import { SignOutButton } from "@/components/admin/sign-out-button";
 const NAV_ITEMS = [
   { href: "/admin", label: "Overzicht" },
   { href: "/admin/sessions", label: "Sessies" },
+  { href: "/admin/teamday", label: "Teamdag" },
   { href: "/admin/timer", label: "Timer" },
   { href: "/admin/uploads", label: "Bouwwerken" },
   { href: "/admin/analysis", label: "AI-analyse" },

@@ -287,3 +287,11 @@ model QuoteRequest {
   privacyAccepted  Boolean  @default(false)
   createdAt        DateTime @default(now())
 }
+
+model TeamdayProgram {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
 
-import type {
-  TeamdayActivity,
-  TeamdayProgram,
-  TeamdaySession,
-} from "@/lib/teamday-program";
+import type { TeamdayActivity, TeamdayProgram, TeamdaySession } from "@/lib/teamday-program";
+import type { TeamdayUploadRecord } from "@/lib/teamday-uploads";
 
 type TimerOption = {
   id: string;
@@ -73,12 +71,264 @@ function buildTimerOptions(session: TeamdaySession): TimerOption[] {
   return base;
 }
 
+type TeamdayUploadItem = {
+  id: string;
+  sessionKey: string;
+  title: string | null;
+  notes: string | null;
+  tags: string[];
+  uploadedBy: string | null;
+  createdAt: string;
+  url: string;
+};
+
+type TeamdayUploadLike = TeamdayUploadRecord | (Omit<TeamdayUploadRecord, "createdAt"> & { createdAt: string });
+
+function mapUploadRecord(record: TeamdayUploadLike): TeamdayUploadItem {
+  return {
+    id: record.id,
+    sessionKey: record.sessionKey,
+    title: record.title ?? null,
+    notes: record.notes ?? null,
+    tags: record.tags ?? [],
+    uploadedBy: record.uploadedBy ?? null,
+    createdAt:
+      typeof record.createdAt === "string"
+        ? record.createdAt
+        : record.createdAt.toISOString(),
+    url: record.url,
+  };
+}
+
+function formatUploadTimestamp(iso: string) {
+  const date = new Date(iso);
+  return new Intl.DateTimeFormat("nl-NL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "short",
+  }).format(date);
+}
+
+type SessionUploadFormProps = {
+  sessionId: string;
+  onUploaded: (upload: TeamdayUploadItem) => void;
+};
+
+function SessionUploadForm({ sessionId, onUploaded }: SessionUploadFormProps) {
+  const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState("");
+  const [notes, setNotes] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
+  const [uploadedBy, setUploadedBy] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setFile(null);
+    setTitle("");
+    setNotes("");
+    setTagsInput("");
+    setUploadedBy("");
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!file) {
+      setError("Kies of maak eerst een foto.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("sessionId", sessionId);
+    formData.append("file", file);
+    formData.append("title", title);
+    formData.append("notes", notes);
+    formData.append("uploadedBy", uploadedBy);
+    formData.append("tags", tagsInput);
+
+    try {
+      setIsSubmitting(true);
+      const response = await fetch("/api/teamday/uploads", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error ?? "Opslaan mislukt");
+      }
+
+      const body = await response.json();
+      const upload = mapUploadRecord(body.upload);
+      onUploaded(upload);
+      setSuccess("Foto opgeslagen bij deze sessie.");
+      resetForm();
+    } catch (err: any) {
+      setError(err.message ?? "Er ging iets mis");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+        Titel (optioneel)
+        <input
+          type="text"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="Bijv. Happy object van team blauw"
+          className="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+        />
+      </label>
+
+      <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+        Notities
+        <textarea
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          rows={3}
+          placeholder="Wat gebeurt hier? Welke inzichten wil je later onthouden?"
+          className="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+        />
+      </label>
+
+      <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+        Tags (comma)
+        <input
+          type="text"
+          value={tagsInput}
+          onChange={(event) => setTagsInput(event.target.value)}
+          placeholder="verbinding, quote, aha"
+          className="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+        />
+      </label>
+
+      <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+        Door wie (optioneel)
+        <input
+          type="text"
+          value={uploadedBy}
+          onChange={(event) => setUploadedBy(event.target.value)}
+          placeholder="Bijv. Vincent"
+          className="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+        />
+      </label>
+
+      <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+        Foto
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="mt-2 w-full text-sm text-white"
+          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+        />
+        <p className="mt-2 text-[0.7rem] text-white/50">Werkt ook rechtstreeks met de camera van je telefoon.</p>
+        {file ? (
+          <p className="mt-1 text-[0.7rem] text-white/40">Geselecteerd: {file.name}</p>
+        ) : null}
+      </label>
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-emerald-300"
+      >
+        {isSubmitting ? "Opslaan..." : "Uploaden"}
+      </button>
+
+      {success ? (
+        <p className="rounded-2xl border border-emerald-400/40 bg-emerald-400/10 px-4 py-3 text-xs text-emerald-100">
+          {success}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-200">
+          {error}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
+function SessionUploadCard({ upload }: { upload: TeamdayUploadItem }) {
+  return (
+    <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+      <div className="relative aspect-video bg-neutral-800">
+        <img
+          src={upload.url}
+          alt={upload.title ?? "Teamdag upload"}
+          className="h-full w-full object-cover"
+        />
+      </div>
+      <div className="space-y-2 px-4 py-3 text-sm text-white/70">
+        <div className="flex items-center justify-between text-xs text-white/40">
+          <span>{formatUploadTimestamp(upload.createdAt)}</span>
+          {upload.uploadedBy ? <span>{upload.uploadedBy}</span> : null}
+        </div>
+        {upload.title ? <p className="text-base font-semibold text-white">{upload.title}</p> : null}
+        {upload.notes ? <p>{upload.notes}</p> : null}
+        {upload.tags?.length ? (
+          <div className="flex flex-wrap gap-2 text-[0.65rem] uppercase tracking-[0.2em] text-white/50">
+            {upload.tags.map((tag) => (
+              <span key={tag} className="rounded-full bg-white/10 px-3 py-1">
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+type SessionUploadsProps = {
+  sessionId: string;
+  uploads: TeamdayUploadItem[];
+  onUploadAdded: (upload: TeamdayUploadItem) => void;
+};
+
+function SessionUploads({ sessionId, uploads, onUploadAdded }: SessionUploadsProps) {
+  return (
+    <section className="space-y-4 rounded-3xl border border-white/10 bg-neutral-900/80 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">Foto’s & verslag</p>
+          <p className="text-sm text-white/60">Leg de creaties van deze sessie vast met korte notities.</p>
+        </div>
+      </div>
+
+      <SessionUploadForm sessionId={sessionId} onUploaded={onUploadAdded} />
+
+      {uploads.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {uploads.map((upload) => (
+            <SessionUploadCard key={upload.id} upload={upload} />
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/50">
+          Nog geen foto’s geüpload voor deze sessie.
+        </p>
+      )}
+    </section>
+  );
+}
+
 type TeamdayViewerProps = {
   program: TeamdayProgram;
   tips: string[];
+  initialUploads: Record<string, TeamdayUploadRecord[]>;
 };
 
-export function TeamdayViewer({ program, tips }: TeamdayViewerProps) {
+export function TeamdayViewer({ program, tips, initialUploads }: TeamdayViewerProps) {
   const sessions = program.sessions;
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedTimerId, setSelectedTimerId] = useState<string>("");
@@ -88,6 +338,23 @@ export function TeamdayViewer({ program, tips }: TeamdayViewerProps) {
   const playlistOpenedRef = useRef(false);
   const [musicReminderActive, setMusicReminderActive] = useState(false);
   const [currentTip, setCurrentTip] = useState<string | null>(null);
+  const [uploadsBySession, setUploadsBySession] = useState<Record<string, TeamdayUploadItem[]>>(() => {
+    const mapped: Record<string, TeamdayUploadItem[]> = {};
+    for (const [key, list] of Object.entries(initialUploads)) {
+      mapped[key] = list.map((upload) => mapUploadRecord(upload));
+    }
+    return mapped;
+  });
+
+  const handleUploadAdded = useCallback((sessionId: string, upload: TeamdayUploadItem) => {
+    setUploadsBySession((prev) => {
+      const current = prev[sessionId] ?? [];
+      return {
+        ...prev,
+        [sessionId]: [upload, ...current],
+      };
+    });
+  }, []);
 
   const hasSessions = sessions.length > 0;
   const safeIndex = hasSessions ? Math.min(activeIndex, sessions.length - 1) : 0;
@@ -548,6 +815,13 @@ export function TeamdayViewer({ program, tips }: TeamdayViewerProps) {
                 </button>
               </div>
             </section>
+
+            <SessionUploads
+              key={activeSession.id}
+              sessionId={activeSession.id}
+              uploads={uploadsBySession[activeSession.id] ?? []}
+              onUploadAdded={(upload) => handleUploadAdded(activeSession.id, upload)}
+            />
 
             {activeSession.reflection?.length ? (
               <section className="rounded-3xl border border-white/10 bg-neutral-900/80 p-5">

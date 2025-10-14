@@ -3,6 +3,7 @@ import {
   DEFAULT_FACILITATOR_TIPS,
   getTeamdayProgram,
 } from "@/lib/teamday-program";
+import { getTeamdayUploadsBySession } from "@/lib/teamday-uploads";
 
 export const metadata = {
   title: "Teamdag viewer",
@@ -11,6 +12,13 @@ export const metadata = {
 
 export default async function TeamdagPage() {
   const program = await getTeamdayProgram();
+  const uploads = await getTeamdayUploadsBySession(program.sessions.map((session) => session.id));
 
-  return <TeamdayViewer program={program} tips={DEFAULT_FACILITATOR_TIPS} />;
+  return (
+    <TeamdayViewer
+      program={program}
+      tips={DEFAULT_FACILITATOR_TIPS}
+      initialUploads={uploads}
+    />
+  );
 }

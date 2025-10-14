@@ -294,4 +294,20 @@ model TeamdayProgram {
   data      Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  uploads TeamdayUpload[]
+}
+
+model TeamdayUpload {
+  id          String   @id @default(cuid())
+  sessionKey  String
+  storagePath String
+  title       String?
+  notes       String?
+  tags        String[] @default([])
+  uploadedBy  String?
+  createdAt   DateTime @default(now())
+
+  program TeamdayProgram? @relation(fields: [programId], references: [id])
+  programId String?
 }

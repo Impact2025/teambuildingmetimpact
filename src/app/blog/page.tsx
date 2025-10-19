@@ -5,15 +5,32 @@ import { getPublishedBlogs } from "@/lib/blogs";
 
 export const metadata: Metadata = {
   title: "Blog | Teambuilding met Impact",
-  description: "Lees verhalen, inzichten en tips over betekenisvolle teambuilding en LEGO® Serious Play.",
+  description: "Lees verhalen, inzichten en tips over betekenisvolle teambuilding en LEGO® Serious Play. Inspirerende cases en praktische adviezen voor sterke teams.",
+  keywords: [
+    "blog",
+    "teambuilding",
+    "LEGO Serious Play",
+    "teamontwikkeling",
+    "inzichten",
+    "tips",
+    "cases",
+    "maatschappelijke impact"
+  ],
   alternates: {
-    canonical: "/blog",
+    canonical: "https://www.teambuildingmetimpact.nl/blog",
   },
   openGraph: {
     title: "Blog | Teambuilding met Impact",
-    description: "Laat je inspireren door cases, inzichten en tips om teams te verbinden met LEGO® Serious Play.",
+    description: "Lees verhalen, inzichten en tips over betekenisvolle teambuilding en LEGO® Serious Play. Inspirerende cases en praktische adviezen voor sterke teams.",
     url: "https://www.teambuildingmetimpact.nl/blog",
+    siteName: "Teambuilding met Impact",
+    locale: "nl_NL",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog | Teambuilding met Impact",
+    description: "Lees verhalen, inzichten en tips over betekenisvolle teambuilding en LEGO® Serious Play.",
   },
 };
 
@@ -45,18 +62,35 @@ export default async function BlogIndexPage() {
                 <Link
                   key={blog.id}
                   href={`/blog/${blog.slug}`}
-                  className="flex h-full flex-col justify-between rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm transition hover:border-[#006D77]/40 hover:shadow-md"
+                  className="group flex h-full flex-col justify-between rounded-3xl border border-neutral-200 bg-white shadow-sm transition hover:border-[#006D77]/40 hover:shadow-md overflow-hidden"
                 >
-                  <div className="space-y-3">
+                  {blog.coverImage ? (
+                    <div className="relative h-56 w-full overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={blog.coverImage}
+                        alt={blog.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                      <h2 className="absolute bottom-4 left-4 right-4 text-xl font-semibold text-white line-clamp-2">
+                        {blog.title}
+                      </h2>
+                    </div>
+                  ) : (
+                    <div className="p-6">
+                      <h2 className="text-xl font-semibold text-neutral-900">{blog.title}</h2>
+                    </div>
+                  )}
+                  <div className="space-y-3 p-6 pt-0">
                     <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent-deep">
                       {new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium" }).format(blog.publishedAt ?? blog.createdAt)}
                     </p>
-                    <h2 className="text-xl font-semibold text-neutral-900">{blog.title}</h2>
-                    <p className="text-sm text-neutral-600">{excerpt}{excerpt.length >= 160 ? "..." : ""}</p>
+                    <p className="text-sm text-neutral-600 line-clamp-3">{excerpt}{excerpt.length >= 160 ? "..." : ""}</p>
+                    <span className="mt-2 inline-flex items-center text-xs font-semibold uppercase tracking-[0.3em] text-[#006D77]">
+                      Lees verder →
+                    </span>
                   </div>
-                  <span className="mt-6 inline-flex items-center text-xs font-semibold uppercase tracking-[0.3em] text-[#006D77]">
-                    Lees verder →
-                  </span>
                 </Link>
               );
             })}

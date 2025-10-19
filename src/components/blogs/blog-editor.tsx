@@ -31,6 +31,7 @@ type BlogEditorState = {
   primaryKeyword: string;
   extraKeywords: string;
   status: BlogStatusValue;
+  publishedAt?: string | null;
   updatedAt?: string | null;
 };
 
@@ -74,6 +75,8 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
   const [isSaving, startSaving] = useTransition();
   const [isGenerating, startGenerating] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadFeedback, setUploadFeedback] = useState<string | null>(null);
 
   const mode: "create" | "edit" = form.id ? "edit" : "create";
 
@@ -97,6 +100,7 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
     (statusOverride?: BlogStatusValue) => {
       startSaving(async () => {
         setFeedback(null);
+        const finalStatus = statusOverride ?? form.status;
         const payload = {
           title: form.title.trim(),
           slug: slugify(form.slug || form.title),
@@ -113,7 +117,8 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
           goal: normalizeOptional(form.goal),
           primaryKeyword: form.primaryKeyword.trim(),
           extraKeywords: normalizeOptional(form.extraKeywords),
-          status: statusOverride ?? form.status,
+          status: finalStatus,
+          publishedAt: form.publishedAt || (finalStatus === "PUBLISHED" ? new Date().toISOString() : null),
         } as const;
 
         try {
@@ -123,7 +128,7 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
             router.replace(`/admin/blogs/${created.id}`);
           } else if (form.id) {
             await updateBlogAction(form.id, payload);
-            setForm((prev) => ({ ...prev, status: payload.status, updatedAt: new Date().toISOString() }));
+            setForm((prev) => ({ ...prev, status: payload.status, publishedAt: payload.publishedAt, updatedAt: new Date().toISOString() }));
             setFeedback({ type: "success", message: "Wijzigingen opgeslagen." });
             if (payload.status === "PUBLISHED") {
               router.refresh();
@@ -179,7 +184,16 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
         }));
 
         setSlugTouched(true);
-        setAiFeedback({ type: "success", message: "Concept gegenereerd. Controleer en werk bij waar nodig." });
+
+        // Show social media content if generated
+        if (result.metadata.socialMediaPost) {
+          setAiFeedback({
+            type: "success",
+            message: `✅ Blog gegenereerd!\n\n📱 Social Media Post:\n${result.metadata.socialMediaPost}\n\n🎨 Midjourney Prompt:\n${result.metadata.midjourneyPrompt || "Geen prompt gegenereerd"}`
+          });
+        } else {
+          setAiFeedback({ type: "success", message: "Concept gegenereerd. Controleer en werk bij waar nodig." });
+        }
       } catch (error) {
         setAiFeedback({
           type: "error",
@@ -209,6 +223,37 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
       }
     });
   }, [form.id, router]);
+
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    setUploadFeedback(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/blogs/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const body = await response.json();
+        throw new Error(body.error ?? "Upload mislukt");
+      }
+
+      const { url } = await response.json();
+      setForm((prev) => ({ ...prev, coverImage: url }));
+      setUploadFeedback("Afbeelding geüpload!");
+    } catch (error) {
+      setUploadFeedback(error instanceof Error ? error.message : "Upload mislukt");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  }, []);
 
   const disableSave = useMemo(() => isSaving || isGenerating || isDeleting, [isDeleting, isGenerating, isSaving]);
 
@@ -289,6 +334,17 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
                 </option>
               ))}
             </select>
+          </label>
+          <label className="space-y-2 text-sm font-medium text-neutral-700" htmlFor="blog-published-at">
+            <span>Publicatiedatum</span>
+            <input
+              id="blog-published-at"
+              name="publishedAt"
+              type="datetime-local"
+              value={form.publishedAt ? new Date(form.publishedAt).toISOString().slice(0, 16) : ""}
+              onChange={(event) => setForm((prev) => ({ ...prev, publishedAt: event.target.value ? new Date(event.target.value).toISOString() : null }))}
+              className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 shadow-sm transition focus:border-[#006D77] focus:outline-none focus:ring-2 focus:ring-[#83C5BE]/40"
+            />
           </label>
           <label className="space-y-2 text-sm font-medium text-neutral-700" htmlFor="blog-primary-keyword">
             <span>Primair keyword</span>
@@ -371,17 +427,39 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <label className="space-y-2 text-sm font-medium text-neutral-700" htmlFor="blog-cover-image">
-            <span>Coverafbeelding (URL)</span>
-            <input
-              id="blog-cover-image"
-              name="coverImage"
-              value={form.coverImage}
-              onChange={(event) => setForm((prev) => ({ ...prev, coverImage: event.target.value }))}
-              placeholder="https://..."
-              className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 shadow-sm transition focus:border-[#006D77] focus:outline-none focus:ring-2 focus:ring-[#83C5BE]/40"
-            />
-          </label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-neutral-700">Coverafbeelding</label>
+            <div className="space-y-2">
+              <input
+                id="blog-cover-image"
+                name="coverImage"
+                value={form.coverImage}
+                onChange={(event) => setForm((prev) => ({ ...prev, coverImage: event.target.value }))}
+                placeholder="https://... of upload een bestand"
+                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 shadow-sm transition focus:border-[#006D77] focus:outline-none focus:ring-2 focus:ring-[#83C5BE]/40"
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={isUploadingImage}
+                  className="text-xs"
+                />
+                {isUploadingImage && <span className="text-xs text-neutral-500">Uploaden...</span>}
+              </div>
+              {uploadFeedback && (
+                <p className="text-xs text-emerald-600">{uploadFeedback}</p>
+              )}
+              {form.coverImage && (
+                <img
+                  src={form.coverImage}
+                  alt="Cover preview"
+                  className="mt-2 h-32 w-full rounded-lg object-cover"
+                />
+              )}
+            </div>
+          </div>
           <label className="space-y-2 text-sm font-medium text-neutral-700" htmlFor="blog-midjourney">
             <span>Midjourney prompt</span>
             <textarea
@@ -446,7 +524,7 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
 
         {aiFeedback ? (
           <div
-            className={`rounded-2xl border px-4 py-3 text-sm ${
+            className={`rounded-2xl border px-4 py-3 text-sm whitespace-pre-wrap ${
               aiFeedback.type === "success"
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : "border-red-200 bg-red-50 text-red-600"

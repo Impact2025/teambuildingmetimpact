@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(npm run lint)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run dev)",
+      "Bash(npm run:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsx:*)",
+      "Bash(dir \"C:\\Users\\v_mun\\.claude\\projects\\lspmetimpact\\lsp-workshop-app\")",
+      "Bash(dir \"C:\\Users\\v_mun\\.claude\\projects\\lspmetimpact\\lsp-workshop-app\\public\")",
+      "Bash(copy:*)",
+      "Bash(npx prisma db seed:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma:*)",
+      "Bash(taskkill:*)",
+      "Bash(if exist .next rmdir /s /q .next)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

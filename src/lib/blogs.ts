@@ -53,3 +53,55 @@ export async function getLatestBlogs(limit = 3) {
     return [];
   }
 }
+
+export async function getPopularBlogs(limit = 5, excludeSlug?: string) {
+  try {
+    return await prisma.blogPost.findMany({
+      where: {
+        status: BlogStatus.PUBLISHED,
+        ...(excludeSlug ? { slug: { not: excludeSlug } } : {}),
+      },
+      orderBy: { publishedAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        publishedAt: true,
+      },
+    });
+  } catch (error) {
+    console.error("Kon populaire blogs niet ophalen", error);
+    return [];
+  }
+}
+
+export async function getAllTags() {
+  try {
+    const blogs = await prisma.blogPost.findMany({
+      where: {
+        status: BlogStatus.PUBLISHED,
+        tags: { not: null },
+      },
+      select: { tags: true },
+    });
+
+    const tagCounts = new Map<string, number>();
+    blogs.forEach((blog) => {
+      if (blog.tags) {
+        const tags = blog.tags.split(",").map((t) => t.trim()).filter(Boolean);
+        tags.forEach((tag) => {
+          tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+        });
+      }
+    });
+
+    return Array.from(tagCounts.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count);
+  } catch (error) {
+    console.error("Kon tags niet ophalen", error);
+    return [];
+  }
+}

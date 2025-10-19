@@ -5,7 +5,7 @@ import { BlogStatus } from "@prisma/client";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-import { getGeminiClient } from "@/lib/gemini";
+import { generateWithOpenRouter } from "@/lib/gemini";
 import { ensureSlugBase, slugify } from "@/lib/slug";
 
 import { requireAdmin } from "./helpers";
@@ -27,6 +27,7 @@ const blogSchema = z.object({
   primaryKeyword: z.string().min(3),
   extraKeywords: z.string().optional(),
   status: z.nativeEnum(BlogStatus).default(BlogStatus.DRAFT),
+  publishedAt: z.string().nullable().optional(),
 });
 
 const aiRequestSchema = z.object({
@@ -91,7 +92,7 @@ export async function createBlogAction(input: z.input<typeof blogSchema>) {
       primaryKeyword: parsed.primaryKeyword,
       extraKeywords: parsed.extraKeywords ?? null,
       status: parsed.status,
-      publishedAt: parsed.status === BlogStatus.PUBLISHED ? new Date() : null,
+      publishedAt: parsed.publishedAt ? new Date(parsed.publishedAt) : (parsed.status === BlogStatus.PUBLISHED ? new Date() : null),
       authorId: admin.id,
     },
   });
@@ -133,7 +134,9 @@ export async function updateBlogAction(id: string, input: z.input<typeof blogSch
       primaryKeyword: parsed.primaryKeyword,
       extraKeywords: parsed.extraKeywords ?? null,
       status: parsed.status,
-      publishedAt: shouldPublish ? existing.publishedAt ?? new Date() : null,
+      publishedAt: parsed.publishedAt
+        ? new Date(parsed.publishedAt)
+        : (shouldPublish ? existing.publishedAt ?? new Date() : null),
     },
   });
 
@@ -154,9 +157,6 @@ export async function generateBlogWithAIAction(input: z.input<typeof aiRequestSc
   const parsed = aiRequestSchema.parse(input);
 
   try {
-    const client = getGeminiClient();
-    const model = client.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? "gemini-1.5-flash" });
-
     const prompt = `Je bent hoofdredacteur van Teambuilding met Impact, een organisatie die bedrijven helpt om met betekenisvolle teambuilding meer verbinding, motivatie en maatschappelijke impact te creëren. Wij faciliteren LEGO® Serious Play® (LSP) sessies waarin teams via bouwen en verhalen inzichten krijgen, beter samenwerken en duurzame verandering realiseren.
 
 Schrijf in het Nederlands een volledige, SEO-vriendelijke blogpost volgens deze structuur:
@@ -169,7 +169,12 @@ H2 Wat kun jij vandaag doen? met concrete stappen of reflectievragen.
 Slot met uitnodiging om samen impact te maken via teambuilding of een LSP-sessie.
 Sluit af met "Bron: [LINK]" waarbij LINK optioneel kan zijn.
 
-Randvoorwaarden: korte actieve zinnen (max 20 woorden), warme positieve deskundige toon, geen emoji's, optimaliseer automatisch voor het primair keyword en extra keywords.
+Randvoorwaarden:
+- Korte actieve zinnen (max 20 woorden)
+- Warme positieve deskundige toon
+- Geen emoji's
+- BELANGRIJK: Gebruik ALLEEN kleine letters in titels, behalve voor eigennamen (bijv. "LEGO® Serious Play®", "Teambuilding met Impact"). Dus NIET "Teambuilding Met Impact: Zo Creëer Je Betekenisvolle Verandering" maar "Teambuilding met impact: zo creëer je betekenisvolle verandering"
+- Optimaliseer automatisch voor het primair keyword en extra keywords
 
 Gegevens:
 Primair keyword: ${parsed.primaryKeyword}
@@ -177,13 +182,21 @@ Extra keywords: ${parsed.extraKeywords ?? "-"}
 Tone of voice: ${parsed.toneOfVoice}
 Doelgroep: ${parsed.audience}
 
-Geef eerst de complete blogtekst. Plaats daarna op een nieuwe regel het metadata-blok als \`\`\`json ...\`\`\` met velden focus_keyphrase, meta_title, meta_description, slug, tags, midjourney_prompt. Het JSON blok moet geldig zijn.`;
+Geef eerst de complete blogtekst. Plaats daarna op een nieuwe regel het metadata-blok als \`\`\`json ...\`\`\` met velden:
+- focus_keyphrase: de focus keyphrase voor SEO
+- meta_title: de meta title
+- meta_description: de meta description
+- slug: de slug voor de URL
+- tags: komma-gescheiden tags
+- midjourney_prompt: Een Midjourney prompt voor een visueel aantrekkelijke afbeelding die past bij het artikel (in het Engels, beschrijf een scene met mensen, LEGO elementen, teamwork, warme kleuren, professioneel)
+- social_media_post: Een social media post voor LinkedIn/Facebook (2-3 zinnen + 3-5 relevante hashtags)
 
-    const result = await model.generateContent(prompt);
-    const output = result.response?.text();
+Het JSON blok moet geldig zijn.`;
+
+    const output = await generateWithOpenRouter(prompt);
 
     if (!output) {
-      throw new Error("Gemini leverde geen resultaat");
+      throw new Error("OpenRouter leverde geen resultaat");
     }
 
     const fencedMatch = output.match(/```json([\s\S]*?)```/i);
@@ -212,6 +225,7 @@ Geef eerst de complete blogtekst. Plaats daarna op een nieuwe regel het metadata
       slug: z.string().min(1),
       tags: z.string().optional(),
       midjourney_prompt: z.string().optional(),
+      social_media_post: z.string().optional(),
     });
 
     const parsedMetadata = metadataSchema.parse(metadata);
@@ -230,6 +244,7 @@ Geef eerst de complete blogtekst. Plaats daarna op een nieuwe regel het metadata
         slug: resolvedSlug,
         tags: parsedMetadata.tags,
         midjourneyPrompt: parsedMetadata.midjourney_prompt,
+        socialMediaPost: parsedMetadata.social_media_post,
         sourceLink: null,
         extraKeywords: parsed.extraKeywords,
       },

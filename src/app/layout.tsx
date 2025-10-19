@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import { AppProviders } from "@/components/providers/app-providers";
+import { SiteHeader } from "@/components/layout/site-header";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -66,7 +68,11 @@ export default function RootLayout({
   return (
     <html lang="nl" className="h-full">
       <body className={`${inter.variable} h-full bg-neutral-50 text-neutral-900`}>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </AppProviders>
       </body>
     </html>
   );

@@ -33,6 +33,7 @@ export default async function EditBlogPage({ params }: PageProps) {
     primaryKeyword: blog.primaryKeyword,
     extraKeywords: blog.extraKeywords ?? "",
     status: blog.status,
+    publishedAt: blog.publishedAt?.toISOString() ?? null,
     updatedAt: blog.updatedAt.toISOString(),
   };
 

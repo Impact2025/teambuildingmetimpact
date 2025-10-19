@@ -58,6 +58,23 @@ enum BlogStatus {
   PUBLISHED
 }
 
+enum TeamdayReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SlideType {
+  INTRO
+  WHO_AM_I
+  WHAT_IS_LSP
+  RULES
+  SESSION
+  BREAK
+  CLOSING
+  CUSTOM
+}
+
 model User {
   id             String    @id @default(cuid())
   email          String    @unique
@@ -295,7 +312,26 @@ model TeamdayProgram {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  uploads TeamdayUpload[]
+  uploads  TeamdayUpload[]
+  reviews  TeamdayReview[]
+  sessions TeamdaySession[]
+}
+
+model TeamdaySession {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  eventDate        DateTime
+  clientName       String
+  participantCount Int?
+  notes            String?
+  programId        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  program TeamdayProgram? @relation(fields: [programId], references: [id])
+  reviews TeamdayReview[]
+
+  @@index([eventDate])
 }
 
 model TeamdayUpload {
@@ -310,4 +346,53 @@ model TeamdayUpload {
 
   program TeamdayProgram? @relation(fields: [programId], references: [id])
   programId String?
+}
+
+model TeamdayReview {
+  id                 String              @id @default(cuid())
+  sessionKey         String
+  reviewerName       String
+  rating             Int
+  comment            String?
+  reviewedAt         DateTime            @default(now())
+  status             TeamdayReviewStatus @default(PENDING)
+  programId          String?
+  teamdaySessionId   String?
+
+  program            TeamdayProgram?     @relation(fields: [programId], references: [id])
+  teamdaySession     TeamdaySession?     @relation(fields: [teamdaySessionId], references: [id])
+
+  @@index([sessionKey])
+  @@index([teamdaySessionId])
+}
+
+model Presentation {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  slides PresentationSlide[]
+}
+
+model PresentationSlide {
+  id             String    @id @default(cuid())
+  presentationId String
+  order          Int
+  type           SlideType @default(CUSTOM)
+  title          String
+  content        String?
+  backgroundColor String?   @default("#006D77")
+  textColor      String?   @default("#FFFFFF")
+  timerDuration  Int?
+  sessionKey     String?
+  imageUrl       String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  presentation Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+
+  @@index([presentationId, order])
 }

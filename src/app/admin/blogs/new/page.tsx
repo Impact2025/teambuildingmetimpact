@@ -19,6 +19,7 @@ const defaultState = {
   primaryKeyword: "",
   extraKeywords: "",
   status: BlogStatus.DRAFT,
+  publishedAt: null,
   updatedAt: null,
 };
 

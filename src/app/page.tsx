@@ -2,7 +2,39 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { getLatestBlogs } from "@/lib/blogs";
+import { getRecentTeamdayReviews } from "@/lib/teamday-reviews";
 import { QuoteWizard } from "@/components/marketing/quote-wizard";
+
+export const metadata = {
+  title: "Teambuilding met Impact | Betekenisvolle Teambuilding en LEGO® Serious Play",
+  description: "Samen bouwen aan sterke teams én een betere wereld. Maatschappelijke teambuilding met LEGO® Serious Play voor blijvende impact en verbinding binnen je team.",
+  keywords: [
+    "teambuilding",
+    "LEGO Serious Play",
+    "maatschappelijke impact",
+    "teamontwikkeling",
+    "bedrijfsuitje",
+    "creatieve werkvormen",
+    "teamcohesie",
+    "sociale verantwoordelijkheid bedrijven"
+  ],
+  alternates: {
+    canonical: "https://www.teambuildingmetimpact.nl/",
+  },
+  openGraph: {
+    title: "Teambuilding met Impact | Betekenisvolle Teambuilding en LEGO® Serious Play",
+    description: "Samen bouwen aan sterke teams én een betere wereld. Maatschappelijke teambuilding met LEGO® Serious Play voor blijvende impact en verbinding binnen je team.",
+    url: "https://www.teambuildingmetimpact.nl/",
+    siteName: "Teambuilding met Impact",
+    locale: "nl_NL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Teambuilding met Impact | Betekenisvolle Teambuilding en LEGO® Serious Play",
+    description: "Samen bouwen aan sterke teams én een betere wereld. Maatschappelijke teambuilding met LEGO® Serious Play voor blijvende impact en verbinding binnen je team.",
+  },
+};
 
 const experienceHighlights = [
   {
@@ -97,8 +129,15 @@ const websiteJsonLd = {
   },
 };
 
+function formatReviewDate(date: Date) {
+  return new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium" }).format(date);
+}
+
 export default async function Home() {
-  const latestBlogs = await getLatestBlogs();
+  const [latestBlogs, recentReviews] = await Promise.all([
+    getLatestBlogs(),
+    getRecentTeamdayReviews(3),
+  ]);
   return (
     <main className="bg-neutral-50 text-neutral-900">
       <script
@@ -163,7 +202,7 @@ export default async function Home() {
       </section>
 
       <section className="border-b border-neutral-200 bg-white py-20">
-        <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 text-neutral-700 sm:px-10 lg:grid-cols-[3fr_2fr] lg:items-start lg:gap-16">
+        <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 sm:px-10 lg:grid-cols-[3fr_2fr] lg:items-start lg:gap-16">
           <div className="space-y-6">
             <h2 className="text-3xl font-semibold text-neutral-900">Onze missie</h2>
             <p>
@@ -269,8 +308,70 @@ export default async function Home() {
         </div>
       </section>
 
+      {recentReviews.length > 0 ? (
+        <section className="relative isolate overflow-hidden py-20 text-white">
+          <div className="absolute inset-0">
+            <div
+              className="h-full w-full bg-cover bg-center"
+              style={{ backgroundImage: "url('/images/lego-teambuilding-background.jpg')" }}
+            />
+            <div className="absolute inset-0 bg-neutral-950/75" />
+          </div>
+          <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 sm:px-10">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">Ervaringen uit de praktijk</p>
+              <h2 className="text-3xl font-semibold">Reviews per onderdeel van de teamdag</h2>
+              <p className="text-sm text-white/70 lg:max-w-3xl">
+                Na afloop vragen we deelnemers om per sessie sterren uit te delen. Zo houden we scherp wat goed werkt en waar we kunnen verbeteren.
+              </p>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-3">
+              {recentReviews.map((review) => (
+                <article
+                  key={review.id}
+                  className="flex h-full flex-col justify-between rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/10"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-lg font-semibold text-white">{review.reviewerName}</p>
+                        <p className="text-xs text-white/60">{formatReviewDate(review.reviewedAt)}</p>
+                      </div>
+                      <div className="flex items-center gap-1 text-xl" aria-label={`${review.rating} van 5 sterren`}>
+                        {Array.from({ length: 5 }).map((_, index) => (
+                          <span
+                            key={index}
+                            aria-hidden="true"
+                            className={index < review.rating ? "text-amber-400" : "text-white/20"}
+                          >
+                            ★
+                          </span>
+                        ))}
+                        <span className="sr-only">{review.rating} van 5 sterren</span>
+                      </div>
+                    </div>
+                    <div className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-white/60">
+                      {review.sessionTitle}
+                    </div>
+                    {review.comment ? (
+                      <p className="text-sm text-white/75">{review.comment}</p>
+                    ) : (
+                      <p className="text-sm italic text-white/50">Geen toelichting gegeven.</p>
+                    )}
+                  </div>
+                  {review.sessionSubtitle ? (
+                    <p className="mt-4 text-xs uppercase tracking-[0.2em] text-white/40">{review.sessionSubtitle}</p>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="bg-[#006D77] py-20 text-white">
-        <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 sm:px-10 lg:grid-cols-[2fr_3fr] lg:items-center">
+        <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 sm:px-10 lg:grid-cols-[3fr_2fr] lg:items-start">
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
               Over Vincent
@@ -293,12 +394,24 @@ export default async function Home() {
           </div>
           <div className="rounded-3xl border border-accent/40 bg-white/5 p-8 text-sm text-white/80">
             <p className="text-lg font-semibold text-accent">Biologische en sociale thee kruiden</p>
-            <p className="mt-3">
-              Mijn favoriete manier om gesprekken te starten? Samen een kop biologische thee drinken, luisteren naar de verhalen van het team en ontdekken waar we het verschil kunnen maken.
-            </p>
-            <p className="mt-4 text-white/60">
-              Laten we samen bouwen aan meer betekenis, creativiteit en verbinding.
-            </p>
+            <div className="mt-4 flex items-start gap-4">
+              <div className="relative h-16 w-16 flex-shrink-0 rounded-full border-2 border-accent">
+                <img 
+                  src="/images/Vincent van Munster.png" 
+                  alt="Vincent van Munster" 
+                  className="h-full w-full rounded-full object-cover"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mt-1">Vincent van Munster. Oprichter, impactmaker en LSP facilitator.</p>
+                <p className="mt-3">
+                  Mijn favoriete manier om gesprekken te starten? Samen een kop biologische thee drinken, luisteren naar de verhalen van het team en ontdekken waar we het verschil kunnen maken.
+                </p>
+                <p className="mt-4 text-white/60">
+                  Laten we samen bouwen aan meer betekenis, creativiteit en verbinding.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -332,18 +445,35 @@ export default async function Home() {
                   <Link
                     key={blog.id}
                     href={`/blog/${blog.slug}`}
-                    className="flex h-full flex-col justify-between rounded-3xl border border-neutral-200 bg-neutral-50/80 p-6 shadow-sm transition hover:border-[#006D77]/50 hover:shadow-md"
+                    className="group flex h-full flex-col justify-between rounded-3xl border border-neutral-200 bg-white shadow-sm transition hover:border-[#006D77]/50 hover:shadow-md overflow-hidden"
                   >
-                    <div className="space-y-3">
+                    {blog.coverImage ? (
+                      <div className="relative h-48 w-full overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={blog.coverImage}
+                          alt={blog.title}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                        <h3 className="absolute bottom-4 left-4 right-4 text-lg font-semibold text-white line-clamp-2">
+                          {blog.title}
+                        </h3>
+                      </div>
+                    ) : (
+                      <div className="p-6">
+                        <h3 className="text-lg font-semibold text-neutral-900">{blog.title}</h3>
+                      </div>
+                    )}
+                    <div className="space-y-3 p-6 pt-0">
                       <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent-deep">
                         {new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium" }).format(blog.publishedAt ?? blog.createdAt)}
                       </p>
-                      <h3 className="text-lg font-semibold text-neutral-900">{blog.title}</h3>
-                      <p className="text-sm text-neutral-600">{summary}{summary.length >= 160 ? "..." : ""}</p>
+                      <p className="text-sm text-neutral-600 line-clamp-3">{summary}{summary.length >= 160 ? "..." : ""}</p>
+                      <span className="mt-2 inline-flex items-center text-xs font-semibold uppercase tracking-[0.3em] text-[#006D77]">
+                        Lees verder →
+                      </span>
                     </div>
-                    <span className="mt-6 inline-flex items-center text-xs font-semibold uppercase tracking-[0.3em] text-[#006D77]">
-                      Lees verder →
-                    </span>
                   </Link>
                 );
               })}

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { getPublishedBlogBySlug } from "@/lib/blogs";
+import { getPublishedBlogBySlug, getPopularBlogs, getAllTags } from "@/lib/blogs";
 
 type PageProps = {
   params: { slug: string };
@@ -148,6 +148,11 @@ export default async function BlogDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  const [popularBlogs, allTags] = await Promise.all([
+    getPopularBlogs(5, params.slug),
+    getAllTags(),
+  ]);
+
   const contentElements = renderBlogContent(blog.content);
   const tags = blog.tags
     ? blog.tags
@@ -158,55 +163,98 @@ export default async function BlogDetailPage({ params }: PageProps) {
 
   return (
     <main className="bg-neutral-50 py-16 text-neutral-900">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 sm:px-10">
-        <div className="space-y-4">
+      <div className="mx-auto w-full max-w-7xl px-6 sm:px-10">
+        <div className="mb-8">
           <Link href="/blog" className="text-xs font-semibold uppercase tracking-[0.3em] text-[#006D77]">
             ← Terug naar overzicht
           </Link>
-          <h1 className="text-4xl font-semibold text-neutral-900">{blog.title}</h1>
-          <p className="text-sm text-neutral-500">
-            {new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium" }).format(blog.publishedAt ?? blog.createdAt)}
-          </p>
-          {blog.coverImage ? (
-            <div className="overflow-hidden rounded-3xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={blog.coverImage}
-                alt={blog.title}
-                className="h-64 w-full object-cover object-center"
-              />
-            </div>
-          ) : null}
         </div>
 
-        <article className="space-y-6">
-          {contentElements}
-        </article>
+        <div className="flex flex-col gap-8 lg:flex-row">
+          {/* Main content */}
+          <div className="flex-1 space-y-8">
+            <div className="space-y-4">
+              <h1 className="text-4xl font-semibold text-neutral-900">{blog.title}</h1>
+              <p className="text-sm text-neutral-500">
+                {new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium" }).format(blog.publishedAt ?? blog.createdAt)}
+              </p>
+            </div>
 
-        <footer className="space-y-4 rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500">Focus keyword</p>
-            <p className="text-base font-medium text-neutral-800">{blog.focusKeyphrase}</p>
-          </div>
-          {tags.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500">Tags</p>
-              <div className="flex flex-wrap gap-2">
+            {blog.coverImage ? (
+              <div className="overflow-hidden rounded-3xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={blog.coverImage}
+                  alt={blog.title}
+                  className="h-96 w-full object-cover object-center"
+                />
+              </div>
+            ) : null}
+
+            <article className="space-y-6">
+              {contentElements}
+            </article>
+
+            {tags.length > 0 ? (
+              <div className="flex flex-wrap gap-2 border-t border-neutral-200 pt-6">
                 {tags.map((tag) => (
                   <span key={tag} className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-[#006D77]">
                     {tag}
                   </span>
                 ))}
               </div>
-            </div>
-          ) : null}
-          {blog.midjourneyPrompt ? (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500">Midjourney prompt</p>
-              <p className="text-sm text-neutral-600">{blog.midjourneyPrompt}</p>
-            </div>
-          ) : null}
-        </footer>
+            ) : null}
+          </div>
+
+          {/* Sidebar */}
+          <aside className="w-full space-y-8 lg:w-80">
+            {/* Meest gelezen blogs */}
+            {popularBlogs.length > 0 ? (
+              <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-4 text-lg font-semibold text-neutral-900">Meest gelezen</h3>
+                <div className="space-y-4">
+                  {popularBlogs.map((popularBlog) => (
+                    <Link
+                      key={popularBlog.id}
+                      href={`/blog/${popularBlog.slug}`}
+                      className="group block space-y-1"
+                    >
+                      <h4 className="text-sm font-semibold text-neutral-900 group-hover:text-[#006D77]">
+                        {popularBlog.title}
+                      </h4>
+                      {popularBlog.excerpt ? (
+                        <p className="line-clamp-2 text-xs text-neutral-600">{popularBlog.excerpt}</p>
+                      ) : null}
+                      <p className="text-xs text-neutral-400">
+                        {new Intl.DateTimeFormat("nl-NL", { dateStyle: "short" }).format(
+                          popularBlog.publishedAt ?? new Date()
+                        )}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Tag cloud */}
+            {allTags.length > 0 ? (
+              <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-4 text-lg font-semibold text-neutral-900">Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {allTags.slice(0, 20).map(({ tag, count }) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700 hover:bg-accent-soft hover:text-[#006D77]"
+                      title={`${count} artikel${count !== 1 ? "en" : ""}`}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </aside>
+        </div>
       </div>
     </main>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
 interface Slide {
@@ -56,11 +56,7 @@ export default function PresentationEditorPage({
     notes: "",
   });
 
-  useEffect(() => {
-    fetchPresentation();
-  }, [params.id]);
-
-  const fetchPresentation = async () => {
+  const fetchPresentation = useCallback(async () => {
     try {
       const res = await fetch(`/api/presentations/${params.id}`);
       if (res.ok) {
@@ -72,7 +68,11 @@ export default function PresentationEditorPage({
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    fetchPresentation();
+  }, [fetchPresentation]);
 
   const handleAddSlide = () => {
     setEditingSlide(null);

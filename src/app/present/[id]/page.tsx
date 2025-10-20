@@ -32,41 +32,27 @@ export default function PresentPage({ params }: { params: { id: string } }) {
   const [timerRunning, setTimerRunning] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
 
-  useEffect(() => {
-    fetchPresentation();
+  const fetchPresentation = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/presentations/${params.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPresentation(data);
+        // Initialize timer if first slide has one
+        if (data.slides[0]?.timerDuration) {
+          setTimerSeconds(data.slides[0].timerDuration);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching presentation:", error);
+    } finally {
+      setLoading(false);
+    }
   }, [params.id]);
 
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
-        e.preventDefault();
-        nextSlide();
-      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
-        e.preventDefault();
-        previousSlide();
-      } else if (e.key === "Home") {
-        e.preventDefault();
-        setCurrentSlideIndex(0);
-      } else if (e.key === "End") {
-        e.preventDefault();
-        if (presentation) {
-          setCurrentSlideIndex(presentation.slides.length - 1);
-        }
-      } else if (e.key === "n" || e.key === "N") {
-        e.preventDefault();
-        setShowNotes((prev) => !prev);
-      } else if (e.key === "t" || e.key === "T") {
-        e.preventDefault();
-        toggleTimer();
-      } else if (e.key === "r" || e.key === "R") {
-        e.preventDefault();
-        resetTimer();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [presentation, currentSlideIndex]);
+    fetchPresentation();
+  }, [fetchPresentation]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -83,24 +69,6 @@ export default function PresentPage({ params }: { params: { id: string } }) {
     }
     return () => clearInterval(interval);
   }, [timerRunning, timerSeconds]);
-
-  const fetchPresentation = async () => {
-    try {
-      const res = await fetch(`/api/presentations/${params.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setPresentation(data);
-        // Initialize timer if first slide has one
-        if (data.slides[0]?.timerDuration) {
-          setTimerSeconds(data.slides[0].timerDuration);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching presentation:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const nextSlide = useCallback(() => {
     if (!presentation) return;
@@ -135,13 +103,13 @@ export default function PresentPage({ params }: { params: { id: string } }) {
     }
   }, [presentation, currentSlideIndex]);
 
-  const toggleTimer = () => {
+  const toggleTimer = useCallback(() => {
     if (timerSeconds !== null && timerSeconds > 0) {
       setTimerRunning((prev) => !prev);
     }
-  };
+  }, [timerSeconds]);
 
-  const resetTimer = () => {
+  const resetTimer = useCallback(() => {
     if (presentation) {
       const currentSlide = presentation.slides[currentSlideIndex];
       if (currentSlide.timerDuration) {
@@ -149,7 +117,39 @@ export default function PresentPage({ params }: { params: { id: string } }) {
         setTimerRunning(false);
       }
     }
-  };
+  }, [presentation, currentSlideIndex]);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        e.preventDefault();
+        previousSlide();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setCurrentSlideIndex(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        if (presentation) {
+          setCurrentSlideIndex(presentation.slides.length - 1);
+        }
+      } else if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        setShowNotes((prev) => !prev);
+      } else if (e.key === "t" || e.key === "T") {
+        e.preventDefault();
+        toggleTimer();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        resetTimer();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [presentation, nextSlide, previousSlide, toggleTimer, resetTimer]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

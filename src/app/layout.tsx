@@ -5,6 +5,8 @@ import "./globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { StructuredData } from "@/components/seo/structured-data";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -24,6 +26,9 @@ export const metadata: Metadata = {
     "Haarlemmermeer",
     "bedrijfsevenement",
   ],
+  verification: {
+    google: "U6UBu2rmVGHruB-OvnSyzL_E0IvnM_z6EI_iinRfgRg",
+  },
   openGraph: {
     type: "website",
     locale: "nl_NL",
@@ -67,6 +72,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nl" className="h-full">
+      <head>
+        <GoogleAnalytics />
+        <StructuredData />
+      </head>
       <body className={`${inter.variable} h-full bg-neutral-50 text-neutral-900`}>
         <AppProviders>
           <SiteHeader />

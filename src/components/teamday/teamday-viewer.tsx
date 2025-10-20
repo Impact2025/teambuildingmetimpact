@@ -529,8 +529,8 @@ export function TeamdayViewer({ program, tips, initialUploads }: TeamdayViewerPr
               </span>
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-white/40">Huidige onderdeel</p>
-                <p className="font-semibold">{formatRange(activeSession)}</p>
-                <p className="text-xs text-white/50">{activeSession.title}</p>
+                <p className="font-semibold">{activeSession ? formatRange(activeSession) : "-"}</p>
+                <p className="text-xs text-white/50">{activeSession?.title ?? "-"}</p>
               </div>
             </div>
           </div>
@@ -622,24 +622,25 @@ export function TeamdayViewer({ program, tips, initialUploads }: TeamdayViewerPr
           </aside>
 
           <section className="space-y-6">
-            <article className="rounded-3xl border border-white/10 bg-neutral-900/70 p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/50">
-                    {formatRange(activeSession)}
-                  </p>
-                  <h2 className="mt-2 text-2xl font-semibold">{activeSession.title}</h2>
-                  {activeSession.subtitle ? (
-                    <p className="text-sm text-white/60">{activeSession.subtitle}</p>
-                  ) : null}
+            {activeSession ? (
+              <article className="rounded-3xl border border-white/10 bg-neutral-900/70 p-6">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/50">
+                      {formatRange(activeSession)}
+                    </p>
+                    <h2 className="mt-2 text-2xl font-semibold">{activeSession.title}</h2>
+                    {activeSession.subtitle ? (
+                      <p className="text-sm text-white/60">{activeSession.subtitle}</p>
+                    ) : null}
+                  </div>
+                  <div className="text-right text-sm text-white/60">
+                    <p>{activeSession.location}</p>
+                    {activeSession.attendees ? (
+                      <p>Aanwezig: {activeSession.attendees.join(", ")}</p>
+                    ) : null}
+                  </div>
                 </div>
-                <div className="text-right text-sm text-white/60">
-                  <p>{activeSession.location}</p>
-                  {activeSession.attendees ? (
-                    <p>Aanwezig: {activeSession.attendees.join(", ")}</p>
-                  ) : null}
-                </div>
-              </div>
               {activeSession.overview ? (
                 <ul className="mt-4 space-y-2 text-sm text-white/70">
                   {activeSession.overview.map((item) => (
@@ -651,8 +652,9 @@ export function TeamdayViewer({ program, tips, initialUploads }: TeamdayViewerPr
                 </ul>
               ) : null}
             </article>
+            ) : null}
 
-            {activeSession.script?.length ? (
+            {activeSession?.script?.length ? (
               <section className="space-y-4">
                 {activeSession.script.map((block) => (
                   <div
@@ -816,12 +818,14 @@ export function TeamdayViewer({ program, tips, initialUploads }: TeamdayViewerPr
               </div>
             </section>
 
-            <SessionUploads
-              key={activeSession.id}
-              sessionId={activeSession.id}
-              uploads={uploadsBySession[activeSession.id] ?? []}
-              onUploadAdded={(upload) => handleUploadAdded(activeSession.id, upload)}
-            />
+            {activeSession ? (
+              <SessionUploads
+                key={activeSession.id}
+                sessionId={activeSession.id}
+                uploads={uploadsBySession[activeSession.id] ?? []}
+                onUploadAdded={(upload) => handleUploadAdded(activeSession.id, upload)}
+              />
+            ) : null}
 
             {activeSession.reflection?.length ? (
               <section className="rounded-3xl border border-white/10 bg-neutral-900/80 p-5">

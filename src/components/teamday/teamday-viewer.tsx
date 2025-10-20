@@ -672,7 +672,7 @@ export function TeamdayViewer({ program, tips, initialUploads }: TeamdayViewerPr
               </section>
             ) : null}
 
-            {activeSession.activities?.length ? (
+            {activeSession?.activities?.length ? (
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.3em] text-white/50">
                   Activiteiten & cues
@@ -827,7 +827,7 @@ export function TeamdayViewer({ program, tips, initialUploads }: TeamdayViewerPr
               />
             ) : null}
 
-            {activeSession.reflection?.length ? (
+            {activeSession?.reflection?.length ? (
               <section className="rounded-3xl border border-white/10 bg-neutral-900/80 p-5">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.3em] text-white/50">Reflectievragen</h3>
                 <ul className="mt-3 space-y-2 text-sm text-white/70">
@@ -841,7 +841,7 @@ export function TeamdayViewer({ program, tips, initialUploads }: TeamdayViewerPr
               </section>
             ) : null}
 
-            {activeSession.transitions?.length || activeSession.notes?.length ? (
+            {activeSession?.transitions?.length || activeSession?.notes?.length ? (
               <section className="grid gap-4 lg:grid-cols-2">
                 {activeSession.transitions?.length ? (
                   <div className="rounded-3xl border border-white/10 bg-neutral-900/80 p-5">

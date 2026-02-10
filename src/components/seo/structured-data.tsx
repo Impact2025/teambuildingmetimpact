@@ -20,7 +20,7 @@ export function StructuredData() {
           url: "https://www.teambuildingmetimpact.nl/images/hero-collaboration.png",
         },
         telephone: "+31-XXX-XXXXXX", // VERVANG DOOR JE TELEFOONNUMMER
-        email: "info@teambuildingmetimpact.nl", // VERVANG DOOR JE EMAIL
+        email: "hello@teambuildingmetimpact.nl",
         address: {
           "@type": "PostalAddress",
           addressLocality: "Haarlemmermeer",

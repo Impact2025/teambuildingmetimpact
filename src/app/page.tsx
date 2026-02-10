@@ -510,7 +510,7 @@ export default async function Home() {
               </div>
               <div>
                 <p className="font-semibold text-neutral-800">Mail</p>
-                <p>info@teambuildingmetimpact.nl</p>
+                <p>hello@teambuildingmetimpact.nl</p>
               </div>
               <div>
                 <p className="font-semibold text-neutral-800">Adres</p>

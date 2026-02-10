@@ -92,7 +92,7 @@ export function SiteFooter() {
             </h3>
             <div className="flex flex-col gap-2 text-sm text-neutral-600">
               <p>06 144 70977</p>
-              <p>info@teambuildingmetimpact.nl</p>
+              <p>hello@teambuildingmetimpact.nl</p>
               <p className="pt-2">
                 Luzernestraat 43<br />
                 2153 GM Nieuw-Vennep

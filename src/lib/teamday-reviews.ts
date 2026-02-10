@@ -335,3 +335,28 @@ export async function deleteTeamdayReview(reviewId: string): Promise<void> {
     throw error;
   }
 }
+
+export type ReviewAggregateStats = {
+  count: number;
+  averageRating: number;
+};
+
+export async function getApprovedReviewStats(): Promise<ReviewAggregateStats> {
+  try {
+    const result = await prisma.teamdayReview.aggregate({
+      where: { status: "APPROVED" },
+      _count: true,
+      _avg: { rating: true },
+    });
+
+    return {
+      count: result._count ?? 0,
+      averageRating: result._avg.rating ?? 0,
+    };
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return { count: 0, averageRating: 0 };
+    }
+    throw error;
+  }
+}

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { getLatestBlogs } from "@/lib/blogs";
-import { getRecentTeamdayReviews } from "@/lib/teamday-reviews";
+import { getRecentTeamdayReviews, getApprovedReviewStats } from "@/lib/teamday-reviews";
 import { QuoteWizard } from "@/components/marketing/quote-wizard";
 
 export const metadata = {
@@ -134,10 +134,50 @@ function formatReviewDate(date: Date) {
 }
 
 export default async function Home() {
-  const [latestBlogs, recentReviews] = await Promise.all([
+  const [latestBlogs, recentReviews, reviewStats] = await Promise.all([
     getLatestBlogs(),
     getRecentTeamdayReviews(3),
+    getApprovedReviewStats(),
   ]);
+
+  // AggregateRating schema for Google rich snippets
+  const aggregateRatingSchema = reviewStats.count > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": "https://www.teambuildingmetimpact.nl/#organization",
+    name: "Teambuilding met Impact",
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: reviewStats.averageRating.toFixed(1),
+      bestRating: "5",
+      worstRating: "1",
+      ratingCount: reviewStats.count,
+    },
+  } : null;
+
+  // Individual review schema
+  const reviewsSchema = recentReviews.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": "https://www.teambuildingmetimpact.nl/#reviews",
+    name: "Teambuilding met Impact",
+    review: recentReviews.map((review) => ({
+      "@type": "Review",
+      author: {
+        "@type": "Person",
+        name: review.reviewerName,
+      },
+      datePublished: review.reviewedAt.toISOString().split("T")[0],
+      reviewBody: review.comment || undefined,
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: review.rating,
+        bestRating: "5",
+        worstRating: "1",
+      },
+    })),
+  } : null;
+
   return (
     <main className="bg-neutral-50 text-neutral-900">
       <script
@@ -150,6 +190,20 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
+      {aggregateRatingSchema && (
+        <script
+          id="aggregate-rating-jsonld"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(aggregateRatingSchema) }}
+        />
+      )}
+      {reviewsSchema && (
+        <script
+          id="reviews-jsonld"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewsSchema) }}
+        />
+      )}
       <section className="relative isolate overflow-hidden bg-neutral-950 text-white">
         <div className="absolute inset-0">
           <div

@@ -161,8 +161,41 @@ export default async function BlogDetailPage({ params }: PageProps) {
         .filter(Boolean)
     : [];
 
+  // BlogPosting Schema for SEO
+  const blogPostingSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: blog.title,
+    description: blog.metaDescription,
+    image: blog.coverImage || "https://www.teambuildingmetimpact.nl/images/hero-collaboration.png",
+    datePublished: (blog.publishedAt ?? blog.createdAt).toISOString(),
+    dateModified: blog.updatedAt.toISOString(),
+    author: {
+      "@type": "Person",
+      name: "Vincent van Munster",
+      url: "https://www.teambuildingmetimpact.nl/over-ons",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Teambuilding met Impact",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://www.teambuildingmetimpact.nl/images/logo.png",
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `https://www.teambuildingmetimpact.nl/blog/${blog.slug}`,
+    },
+    keywords: [blog.primaryKeyword, blog.extraKeywords, blog.tags].filter(Boolean).join(", "),
+  };
+
   return (
     <main className="bg-neutral-50 py-16 text-neutral-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingSchema) }}
+      />
       <div className="mx-auto w-full max-w-7xl px-6 sm:px-10">
         <div className="mb-8">
           <Link href="/blog" className="text-xs font-semibold uppercase tracking-[0.3em] text-[#006D77]">

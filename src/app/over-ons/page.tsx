@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import Link from "next/link";
 
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
+
 export const metadata: Metadata = {
   title: "Over ons | Teambuilding met Impact",
   description: "Leer meer over Teambuilding met Impact, onze visie, missie, kernwaarden en oprichter Vincent van Munster. Ontdek hoe wij teams sterker maken door samen impact te creëren.",
@@ -44,6 +46,13 @@ export default function AboutPage() {
           <div className="absolute inset-0 bg-neutral-950/70" />
         </div>
         <div className="relative mx-auto flex min-h-[50vh] w-full max-w-6xl flex-col justify-center gap-6 px-6 pb-24 pt-32 sm:px-10">
+          <Breadcrumbs
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Over ons" },
+            ]}
+            className="text-white/60 [&_a]:text-white/60 [&_a:hover]:text-accent"
+          />
           <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">Over Teambuilding met Impact</h1>
           <p className="max-w-2xl text-lg text-white/80">
             Wij geloven dat teambuilding pas echt waardevol is als het méér oplevert dan alleen een leuke dag.
@@ -157,6 +166,34 @@ export default function AboutPage() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-16">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-6 text-center sm:px-10">
+          <h2 className="text-2xl font-semibold text-neutral-900">
+            Meer ontdekken?
+          </h2>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link
+              href="/missie"
+              className="inline-flex items-center justify-center rounded-xl border border-neutral-200 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:border-[#006D77] hover:text-[#006D77]"
+            >
+              Onze missie
+            </Link>
+            <Link
+              href="/lsp"
+              className="inline-flex items-center justify-center rounded-xl border border-neutral-200 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:border-[#006D77] hover:text-[#006D77]"
+            >
+              LEGO® Serious Play
+            </Link>
+            <Link
+              href="/programmas"
+              className="inline-flex items-center justify-center rounded-xl bg-[#006D77] px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-deep"
+            >
+              Bekijk programma&apos;s
+            </Link>
           </div>
         </div>
       </section>

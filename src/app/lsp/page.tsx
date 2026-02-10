@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import Link from "next/link";
 
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
+
 export const metadata: Metadata = {
   title: "LEGO® Serious Play | Teambuilding met Impact",
   description: "Ontdek LEGO® Serious Play: bouw aan inzicht, verbinding en innovatie met deze krachtige methode voor teamontwikkeling.",
@@ -19,6 +21,13 @@ export default function LspPage() {
           <div className="absolute inset-0 bg-neutral-950/70" />
         </div>
         <div className="relative mx-auto flex min-h-[50vh] w-full max-w-6xl flex-col justify-center gap-6 px-6 pb-24 pt-32 sm:px-10">
+          <Breadcrumbs
+            items={[
+              { label: "Home", href: "/" },
+              { label: "LEGO® Serious Play" },
+            ]}
+            className="text-white/60 [&_a]:text-white/60 [&_a:hover]:text-accent"
+          />
           <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">LEGO® Serious Play</h1>
           <p className="max-w-2xl text-lg text-white/80">
             Bouw aan inzicht, verbinding en innovatie

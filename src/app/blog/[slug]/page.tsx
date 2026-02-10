@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { getPublishedBlogBySlug, getPopularBlogs, getAllTags } from "@/lib/blogs";
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 
 type PageProps = {
   params: { slug: string };
@@ -197,11 +198,14 @@ export default async function BlogDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingSchema) }}
       />
       <div className="mx-auto w-full max-w-7xl px-6 sm:px-10">
-        <div className="mb-8">
-          <Link href="/blog" className="text-xs font-semibold uppercase tracking-[0.3em] text-[#006D77]">
-            ← Terug naar overzicht
-          </Link>
-        </div>
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Blog", href: "/blog" },
+            { label: blog.title },
+          ]}
+          className="mb-8"
+        />
 
         <div className="flex flex-col gap-8 lg:flex-row">
           {/* Main content */}

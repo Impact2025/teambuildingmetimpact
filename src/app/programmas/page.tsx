@@ -1,5 +1,8 @@
 import { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
+
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "Programma's | Teambuilding met Impact",
@@ -89,9 +92,49 @@ const partnerLogos = [
   },
 ];
 
+const faqs = [
+  {
+    question: "Wat is maatschappelijke teambuilding?",
+    answer: "Maatschappelijke teambuilding combineert teamontwikkeling met een bijdrage aan de samenleving. Jullie team werkt samen aan een project dat anderen helpt, waardoor je niet alleen de onderlinge band versterkt maar ook concrete impact maakt.",
+  },
+  {
+    question: "Hoeveel deelnemers kunnen meedoen?",
+    answer: "Onze programma's zijn geschikt voor groepen van 8 tot 150 deelnemers. Voor grotere groepen maken we maatwerk mogelijk door meerdere activiteiten parallel te organiseren.",
+  },
+  {
+    question: "Hoe lang duurt een teambuilding programma?",
+    answer: "Een standaard programma duurt een halve dag (3-4 uur) of een hele dag (6-8 uur). We kunnen ook meerdaagse trajecten verzorgen voor diepgaandere teamontwikkeling.",
+  },
+  {
+    question: "Wat kost een teambuilding met impact?",
+    answer: "De kosten hangen af van het aantal deelnemers, de duur en het type programma. Vraag vrijblijvend een offerte aan voor een prijsindicatie op maat.",
+  },
+  {
+    question: "Kunnen jullie ook LEGO® Serious Play sessies verzorgen?",
+    answer: "Ja, onze gecertificeerde LEGO® Serious Play facilitator begeleidt sessies waarbij teams met LEGO-steentjes werken aan strategie, samenwerking en innovatie. Dit kan als losstaande workshop of als onderdeel van een teamdag.",
+  },
+];
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+};
+
 export default function ProgramsPage() {
   return (
     <main className="bg-neutral-50 text-neutral-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <section className="relative isolate overflow-hidden bg-neutral-950 text-white">
         <div className="absolute inset-0">
           <div
@@ -101,6 +144,13 @@ export default function ProgramsPage() {
           <div className="absolute inset-0 bg-neutral-950/70" />
         </div>
         <div className="relative mx-auto flex min-h-[50vh] w-full max-w-6xl flex-col justify-center gap-6 px-6 pb-24 pt-32 sm:px-10">
+          <Breadcrumbs
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Programma's" },
+            ]}
+            className="text-white/60 [&_a]:text-white/60 [&_a:hover]:text-accent"
+          />
           <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">Onze programma&#39;s</h1>
           <p className="max-w-2xl text-lg text-white/80">
             Programma&#39;s die raken én verbinden – voor betekenisvolle teambuilding die blijft hangen.
@@ -186,6 +236,46 @@ export default function ProgramsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-neutral-200 bg-white py-20">
+        <div className="mx-auto w-full max-w-6xl px-6 sm:px-10">
+          <div className="space-y-4 text-center lg:text-left">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent-deep">
+              Veelgestelde vragen
+            </p>
+            <h2 className="text-3xl font-semibold text-neutral-900">
+              FAQ over teambuilding met impact
+            </h2>
+          </div>
+          <div className="mt-10 space-y-6">
+            {faqs.map((faq, index) => (
+              <details
+                key={index}
+                className="group rounded-2xl border border-neutral-200 bg-neutral-50 p-6"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-neutral-900">
+                  {faq.question}
+                  <span className="ml-4 text-accent-deep transition-transform group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <p className="mt-4 text-sm text-neutral-600">{faq.answer}</p>
+              </details>
+            ))}
+          </div>
+          <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <p className="text-sm text-neutral-600">
+              Meer weten over LEGO® Serious Play?
+            </p>
+            <Link
+              href="/lsp"
+              className="inline-flex items-center justify-center rounded-xl bg-[#006D77] px-5 py-2 text-sm font-semibold text-white transition hover:bg-accent-deep"
+            >
+              Ontdek LSP →
+            </Link>
           </div>
         </div>
       </section>

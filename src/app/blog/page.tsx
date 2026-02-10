@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getPublishedBlogs } from "@/lib/blogs";
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "Blog | Teambuilding met Impact",
@@ -41,9 +42,13 @@ export default async function BlogIndexPage() {
     <main className="bg-neutral-50 py-16 text-neutral-900">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 sm:px-10">
         <header className="space-y-3 text-center sm:text-left">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent-deep">
-            Blog
-          </p>
+          <Breadcrumbs
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Blog" },
+            ]}
+            className="justify-center sm:justify-start"
+          />
           <h1 className="text-4xl font-semibold">Betekenisvolle teambuilding verhalen</h1>
           <p className="text-sm text-neutral-600 sm:max-w-2xl">
             Laat je inspireren door cases, inzichten en tips om teams te verbinden met LEGO® Serious Play en impactvolle teambuilding.

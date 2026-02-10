@@ -1,4 +1,7 @@
 import { Metadata } from "next";
+import Link from "next/link";
+
+import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 
 export const metadata: Metadata = {
   title: "Onze missie | Teambuilding met Impact",
@@ -42,6 +45,13 @@ export default function MissionPage() {
           <div className="absolute inset-0 bg-neutral-950/70" />
         </div>
         <div className="relative mx-auto flex min-h-[50vh] w-full max-w-6xl flex-col justify-center gap-6 px-6 pb-24 pt-32 sm:px-10">
+          <Breadcrumbs
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Onze missie" },
+            ]}
+            className="text-white/60 [&_a]:text-white/60 [&_a:hover]:text-accent"
+          />
           <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">Onze missie</h1>
           <p className="max-w-2xl text-lg text-white/80">
             Teams sterker maken door samen impact te creëren – op de samenwerking binnen het team én op de wereld daarbuiten.
@@ -121,6 +131,31 @@ export default function MissionPage() {
                 maatschappelijke initiatieven die extra aandacht verdienen.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-neutral-100 py-16">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-6 text-center sm:px-10">
+          <h2 className="text-2xl font-semibold text-neutral-900">
+            Klaar om samen impact te maken?
+          </h2>
+          <p className="max-w-xl text-neutral-600">
+            Ontdek onze programma&apos;s of neem direct contact op voor een vrijblijvend gesprek.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link
+              href="/programmas"
+              className="inline-flex items-center justify-center rounded-xl bg-[#006D77] px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-deep"
+            >
+              Bekijk programma&apos;s
+            </Link>
+            <Link
+              href="/#contact"
+              className="inline-flex items-center justify-center rounded-xl border border-[#006D77] px-6 py-3 text-sm font-semibold text-[#006D77] transition hover:bg-[#006D77] hover:text-white"
+            >
+              Neem contact op
+            </Link>
           </div>
         </div>
       </section>

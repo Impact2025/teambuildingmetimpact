@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getLatestBlogs } from "@/lib/blogs";
 import { getRecentTeamdayReviews, getApprovedReviewStats } from "@/lib/teamday-reviews";
 import { QuoteWizard } from "@/components/marketing/quote-wizard";
+import { ChatAdvisor } from "@/components/chat/chat-advisor";
 
 export const metadata = {
   title: "Teambuilding met Impact | Betekenisvolle Teambuilding en LEGO® Serious Play",
@@ -206,9 +207,13 @@ export default async function Home() {
       )}
       <section className="relative isolate overflow-hidden bg-neutral-950 text-white">
         <div className="absolute inset-0">
-          <div
-            className="h-full w-full bg-cover bg-center"
-            style={{ backgroundImage: "url('/images/hero-collaboration.png')" }}
+          <Image
+            src="/images/hero-collaboration.png"
+            alt="Team samenwerking tijdens LEGO Serious Play sessie"
+            fill
+            priority
+            className="object-cover object-center"
+            sizes="100vw"
           />
           <div className="absolute inset-0 bg-neutral-950/70" />
         </div>
@@ -285,9 +290,12 @@ export default async function Home() {
 
       <section className="relative isolate overflow-hidden py-20 text-white">
         <div className="absolute inset-0">
-          <div
-            className="h-full w-full bg-cover bg-center"
-            style={{ backgroundImage: "url('/images/programs-background.png')" }}
+          <Image
+            src="/images/programs-background.png"
+            alt=""
+            fill
+            className="object-cover object-center"
+            sizes="100vw"
           />
           <div className="absolute inset-0 bg-neutral-950/80" />
         </div>
@@ -365,9 +373,12 @@ export default async function Home() {
       {recentReviews.length > 0 ? (
         <section className="relative isolate overflow-hidden py-20 text-white">
           <div className="absolute inset-0">
-            <div
-              className="h-full w-full bg-cover bg-center"
-              style={{ backgroundImage: "url('/images/lego-teambuilding-background.jpg')" }}
+            <Image
+              src="/images/lego-teambuilding-background.jpg"
+              alt=""
+              fill
+              className="object-cover object-center"
+              sizes="100vw"
             />
             <div className="absolute inset-0 bg-neutral-950/75" />
           </div>
@@ -449,11 +460,13 @@ export default async function Home() {
           <div className="rounded-3xl border border-accent/40 bg-white/5 p-8 text-sm text-white/80">
             <p className="text-lg font-semibold text-accent">Biologische en sociale thee kruiden</p>
             <div className="mt-4 flex items-start gap-4">
-              <div className="relative h-16 w-16 flex-shrink-0 rounded-full border-2 border-accent">
-                <img 
-                  src="/images/Vincent van Munster.png" 
-                  alt="Vincent van Munster" 
-                  className="h-full w-full rounded-full object-cover"
+              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full border-2 border-accent">
+                <Image
+                  src="/images/Vincent van Munster.png"
+                  alt="Vincent van Munster"
+                  fill
+                  className="object-cover"
+                  sizes="64px"
                 />
               </div>
               <div>
@@ -574,6 +587,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <ChatAdvisor />
     </main>
   );
 }

@@ -1,11 +1,10 @@
-import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
 
 import { requireAdmin } from "@/actions/helpers";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const BLOG_IMAGES_BUCKET = "blog-images";
 
 function normaliseFileName(name: string): string {
   return name
@@ -33,33 +32,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Alleen afbeeldingen zijn toegestaan" }, { status: 400 });
   }
 
-  let supabase;
   try {
-    supabase = createSupabaseServerClient();
+    const filename = `${Date.now()}-${normaliseFileName(file.name)}`;
+    const uploadsDir = join(process.cwd(), "public", "images", "blog");
+
+    // Ensure directory exists
+    await mkdir(uploadsDir, { recursive: true });
+
+    const filepath = join(uploadsDir, filename);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await writeFile(filepath, buffer);
+
+    const url = `/images/blog/${filename}`;
+    return NextResponse.json({ url });
   } catch (error) {
-    console.error("Supabase configuratie ontbreekt", error);
-    return NextResponse.json({ error: "Opslag niet geconfigureerd" }, { status: 500 });
-  }
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const key = `${Date.now()}-${normaliseFileName(file.name)}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from(BLOG_IMAGES_BUCKET)
-    .upload(key, buffer, {
-      contentType: file.type,
-      upsert: false,
-    });
-
-  if (uploadError) {
-    console.error("Upload error:", uploadError);
+    console.error("Upload error:", error);
     return NextResponse.json({ error: "Opslaan in opslag mislukt" }, { status: 500 });
   }
-
-  // Get public URL
-  const { data: urlData } = supabase.storage
-    .from(BLOG_IMAGES_BUCKET)
-    .getPublicUrl(key);
-
-  return NextResponse.json({ url: urlData.publicUrl });
 }

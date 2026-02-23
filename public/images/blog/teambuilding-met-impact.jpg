@@ -1,0 +1,12 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#006D77"/>
+  <text x="50%" y="45%" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">
+    Teambuilding met Impact
+  </text>
+  <text x="50%" y="55%" font-family="Arial, sans-serif" font-size="32" fill="#E0E0E0" text-anchor="middle" dominant-baseline="middle">
+    LEGO® Serious Play®
+  </text>
+  <text x="50%" y="85%" font-family="Arial, sans-serif" font-size="20" fill="#CCCCCC" text-anchor="middle" dominant-baseline="middle">
+    Placeholder - Upload je eigen afbeelding
+  </text>
+</svg>

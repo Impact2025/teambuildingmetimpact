@@ -29,7 +29,7 @@ export function SiteFooter() {
                 href="https://weareimpact.nl/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#006D77] underline hover:text-[#005862]"
+                className="text-brand underline hover:text-brand-dark"
               >
                 WeAreImpact
               </a>
@@ -43,43 +43,43 @@ export function SiteFooter() {
             <nav className="flex flex-col gap-2">
               <Link
                 href="/"
-                className="text-sm text-neutral-600 transition-colors hover:text-[#006D77]"
+                className="text-sm text-neutral-600 transition-colors hover:text-brand"
               >
                 Home
               </Link>
               <Link
                 href="/over-ons"
-                className="text-sm text-neutral-600 transition-colors hover:text-[#006D77]"
+                className="text-sm text-neutral-600 transition-colors hover:text-brand"
               >
                 Over ons
               </Link>
               <Link
                 href="/missie"
-                className="text-sm text-neutral-600 transition-colors hover:text-[#006D77]"
+                className="text-sm text-neutral-600 transition-colors hover:text-brand"
               >
                 Onze missie
               </Link>
               <Link
                 href="/programmas"
-                className="text-sm text-neutral-600 transition-colors hover:text-[#006D77]"
+                className="text-sm text-neutral-600 transition-colors hover:text-brand"
               >
                 Programma&#39;s
               </Link>
               <Link
                 href="/viewer"
-                className="text-sm text-neutral-600 transition-colors hover:text-[#006D77]"
+                className="text-sm text-neutral-600 transition-colors hover:text-brand"
               >
                 LEGO&#174; Viewer
               </Link>
               <Link
                 href="/blog"
-                className="text-sm text-neutral-600 transition-colors hover:text-[#006D77]"
+                className="text-sm text-neutral-600 transition-colors hover:text-brand"
               >
                 Blog
               </Link>
               <Link
                 href="#contact"
-                className="text-sm text-neutral-600 transition-colors hover:text-[#006D77]"
+                className="text-sm text-neutral-600 transition-colors hover:text-brand"
               >
                 Contact
               </Link>

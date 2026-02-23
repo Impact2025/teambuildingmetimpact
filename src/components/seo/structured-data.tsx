@@ -19,7 +19,7 @@ export function StructuredData() {
           "@type": "ImageObject",
           url: "https://www.teambuildingmetimpact.nl/images/hero-collaboration.png",
         },
-        telephone: "+31-XXX-XXXXXX", // VERVANG DOOR JE TELEFOONNUMMER
+        telephone: "+31-6-14470977",
         email: "hello@teambuildingmetimpact.nl",
         address: {
           "@type": "PostalAddress",
@@ -46,10 +46,7 @@ export function StructuredData() {
           },
         ],
         sameAs: [
-          // VOEG HIER JE SOCIAL MEDIA LINKS TOE
-          // "https://www.linkedin.com/company/teambuilding-met-impact",
-          // "https://www.facebook.com/teambuildingmetimpact",
-          // "https://www.instagram.com/teambuildingmetimpact",
+          "https://www.linkedin.com/company/teambuilding-met-impact/",
         ],
       },
       {

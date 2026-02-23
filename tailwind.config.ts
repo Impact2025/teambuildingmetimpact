@@ -14,6 +14,10 @@ const config: Config = {
           soft: "#E0F2EF",
           deep: "#5BA39D",
         },
+        brand: {
+          DEFAULT: "#006D77",
+          dark: "#005862",
+        },
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

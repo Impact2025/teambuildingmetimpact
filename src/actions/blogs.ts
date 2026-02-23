@@ -15,7 +15,7 @@ const blogSchema = z.object({
   slug: z.string().min(3).optional(),
   excerpt: z.string().optional(),
   content: z.string().optional(),
-  coverImage: z.string().url().optional(),
+  coverImage: z.string().optional(), // Accept both URLs and local paths
   focusKeyphrase: z.string().min(3),
   metaTitle: z.string().min(3),
   metaDescription: z.string().min(10),
@@ -160,7 +160,7 @@ export async function generateBlogWithAIAction(input: z.input<typeof aiRequestSc
     const prompt = `Je bent hoofdredacteur van Teambuilding met Impact, een organisatie die bedrijven helpt om met betekenisvolle teambuilding meer verbinding, motivatie en maatschappelijke impact te creëren. Wij faciliteren LEGO® Serious Play® (LSP) sessies waarin teams via bouwen en verhalen inzichten krijgen, beter samenwerken en duurzame verandering realiseren.
 
 Schrijf in het Nederlands een volledige, SEO-vriendelijke blogpost volgens deze structuur:
-H1 met het primair keyword.
+H1 met het primair keyword (in sentence case - zie hieronder).
 Intro (2–3 zinnen) over relevantie voor teams en organisaties.
 H2 Wat is er gebeurd?
 H2 Wat betekent dit voor teams en leiders? met 3–5 bulletpunten praktische tips of inzichten.
@@ -169,11 +169,22 @@ H2 Wat kun jij vandaag doen? met concrete stappen of reflectievragen.
 Slot met uitnodiging om samen impact te maken via teambuilding of een LSP-sessie.
 Sluit af met "Bron: [LINK]" waarbij LINK optioneel kan zijn.
 
-Randvoorwaarden:
+KRITIEKE RANDVOORWAARDEN VOOR ALLE TITELS (H1, H2, meta_title):
+- VERPLICHT: Gebruik sentence case - alleen de EERSTE letter is een hoofdletter, de rest kleine letters
+- Uitzondering: Eigennamen blijven zoals ze zijn (LEGO® Serious Play®, Teambuilding met Impact als bedrijfsnaam)
+- Voorbeelden CORRECT:
+  ✓ "Teambuilding met impact: zo creëer je betekenisvolle verandering"
+  ✓ "Effectieve teambuilding met LEGO Serious Play"
+  ✓ "Zo bouw je een sterk team met maatschappelijke impact"
+- Voorbeelden FOUT (gebruik deze NOOIT):
+  ✗ "Teambuilding Met Impact: Zo Creëer Je Betekenisvolle Verandering"
+  ✗ "Effectieve Teambuilding Met LEGO Serious Play"
+  ✗ "Zo Bouw Je Een Sterk Team"
+
+Andere randvoorwaarden:
 - Korte actieve zinnen (max 20 woorden)
 - Warme positieve deskundige toon
 - Geen emoji's
-- BELANGRIJK: Gebruik ALLEEN kleine letters in titels, behalve voor eigennamen (bijv. "LEGO® Serious Play®", "Teambuilding met Impact"). Dus NIET "Teambuilding Met Impact: Zo Creëer Je Betekenisvolle Verandering" maar "Teambuilding met impact: zo creëer je betekenisvolle verandering"
 - Optimaliseer automatisch voor het primair keyword en extra keywords
 
 Gegevens:
@@ -183,15 +194,17 @@ Tone of voice: ${parsed.toneOfVoice}
 Doelgroep: ${parsed.audience}
 
 Geef eerst de complete blogtekst. Plaats daarna op een nieuwe regel het metadata-blok als \`\`\`json ...\`\`\` met velden:
-- focus_keyphrase: de focus keyphrase voor SEO
-- meta_title: de meta title
-- meta_description: de meta description
-- slug: de slug voor de URL
+- focus_keyphrase: de focus keyphrase voor SEO (in sentence case)
+- meta_title: de meta title (VERPLICHT in sentence case - alleen eerste letter hoofdletter!)
+- meta_description: de meta description (in sentence case)
+- slug: de slug voor de URL (lowercase met hyphens)
 - tags: komma-gescheiden tags
 - midjourney_prompt: Een Midjourney prompt voor een visueel aantrekkelijke afbeelding die past bij het artikel (in het Engels, beschrijf een scene met mensen, LEGO elementen, teamwork, warme kleuren, professioneel)
 - social_media_post: Een social media post voor LinkedIn/Facebook (2-3 zinnen + 3-5 relevante hashtags)
 
-Het JSON blok moet geldig zijn.`;
+Het JSON blok moet geldig zijn.
+
+NOGMAALS: Alle titels (inclusief meta_title) MOETEN in sentence case zijn!`;
 
     const output = await generateWithOpenRouter(prompt);
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getLatestBlogs } from "@/lib/blogs";
 import { getRecentTeamdayReviews, getApprovedReviewStats } from "@/lib/teamday-reviews";
 import { QuoteWizard } from "@/components/marketing/quote-wizard";
-import { ChatAdvisor } from "@/components/chat/chat-advisor";
+import { EXPERIENCE_HIGHLIGHTS, WHY_CHOOSE_US, PARTNER_LOGOS } from "@/lib/constants/site";
 
 export const metadata = {
   title: "Teambuilding met Impact | Betekenisvolle Teambuilding en LEGO® Serious Play",
@@ -37,67 +37,10 @@ export const metadata = {
   },
 };
 
-const experienceHighlights = [
-  {
-    title: "Aan tafel en in gesprek…",
-    description:
-      "Met wie zou jij wel eens aan tafel willen zitten? Ouderen, jongeren of een andere doelgroep? Kom met elkaar in gesprek onder het genot van een lekkere en gezonde maaltijd.",
-  },
-  {
-    title: "Handen uit de mouwen",
-    description:
-      "Met je team iets betekenen voor de lokale voetbalclub of muziekvereniging? Wij regelen het. Een uitje dat je voldoening geeft en waar teambuilding centraal staat.",
-  },
-  {
-    title: "Natuurlijk goed en lekker bezig",
-    description:
-      "Zet je samen in voor de Nederlandse natuur. Combineer het met een wandeling of excursie en ervaar hoe buiten zijn energie geeft.",
-  },
-  {
-    title: "Ga op stap en neem mee…",
-    description:
-      "Neem een bijzondere groep mensen mee op stap: naar de dierentuin, een museum of gewoon lekker naar buiten. Jullie aandacht maakt het verschil.",
-  },
-];
-
-const reasons = [
-  "Versterkt teamspirit en werkplezier",
-  "Geeft medewerkers trots en zingeving",
-  "Verbetert imago en maatschappelijke betrokkenheid",
-  "Creëert blijvende herinneringen én concrete maatschappelijke resultaten",
-];
-
 const legoBenefits = [
   "Diepgang – complexe vraagstukken worden zichtbaar en tastbaar",
   "Verbinding – iedereen draagt gelijkwaardig bij en bouwt mee",
   "Creativiteit & impact – doen in plaats van praten versnelt nieuwe ideeën",
-];
-
-const partnerLogos = [
-  {
-    src: "/images/partner-voedselbank.jpg",
-    alt: "Voedselbank partnerlogo",
-  },
-  {
-    src: "/images/partner-meerwaarde.gif",
-    alt: "MeerWaarde partnerlogo",
-  },
-  {
-    src: "/images/partner-hq720.png",
-    alt: "Impact organisatie partnerlogo",
-  },
-  {
-    src: "/images/partner-rabobank.png",
-    alt: "Rabobank partnerlogo",
-  },
-  {
-    src: "/images/partner-gemeente-haarlemmermeer.png",
-    alt: "Gemeente Haarlemmermeer partnerlogo",
-  },
-  {
-    src: "/images/partner-ons-tweede-thuis.png",
-    alt: "Ons Tweede Thuis partnerlogo",
-  },
 ];
 
 const organizationJsonLd = {
@@ -234,7 +177,7 @@ export default async function Home() {
             <div className="flex flex-wrap gap-4 pt-1">
               <Link
                 href="#contact"
-                className="inline-flex items-center justify-center rounded-xl bg-[#006D77] px-6 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-accent-deep"
+                className="inline-flex items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-brand-dark"
               >
                 Vraag een gratis offerte aan
               </Link>
@@ -308,10 +251,10 @@ export default async function Home() {
             </p>
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
-            {experienceHighlights.map((highlight) => (
+            {EXPERIENCE_HIGHLIGHTS.map((highlight) => (
               <div
                 key={highlight.title}
-                className="flex h-full flex-col justify-between rounded-3xl border border-white/10 bg-[#006D77] p-6 shadow-lg shadow-black/30"
+                className="flex h-full flex-col justify-between rounded-3xl border border-white/10 bg-brand p-6 shadow-lg shadow-black/30"
               >
                 <div className="space-y-3">
                   <h3 className="text-xl font-semibold text-white">{highlight.title}</h3>
@@ -328,7 +271,7 @@ export default async function Home() {
           <div className="flex-1 space-y-6">
             <h2 className="text-3xl font-semibold text-neutral-900">Waarom kiezen voor Teambuilding met Impact?</h2>
             <ul className="space-y-3">
-              {reasons.map((reason) => (
+              {WHY_CHOOSE_US.map((reason) => (
                 <li key={reason} className="flex items-start gap-3 text-sm text-neutral-700">
                   <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-accent-deep" />
                   <span>{reason}</span>
@@ -340,7 +283,7 @@ export default async function Home() {
                 Impact maken we o.a. met
               </p>
               <div className="flex flex-wrap items-center gap-4 lg:gap-6">
-                {partnerLogos.map((logo) => (
+                {PARTNER_LOGOS.map((logo) => (
                   <div
                     key={logo.src}
                     className="flex h-16 w-32 items-center justify-center rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm"
@@ -374,13 +317,13 @@ export default async function Home() {
         <section className="relative isolate overflow-hidden py-20 text-white">
           <div className="absolute inset-0">
             <Image
-              src="/images/lego-teambuilding-background.jpg"
+              src="/images/hero-collaboration.png"
               alt=""
               fill
               className="object-cover object-center"
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-neutral-950/75" />
+            <div className="absolute inset-0 bg-neutral-950/85" />
           </div>
           <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 sm:px-10">
             <div className="space-y-2">
@@ -435,7 +378,7 @@ export default async function Home() {
         </section>
       ) : null}
 
-      <section className="bg-[#006D77] py-20 text-white">
+      <section className="bg-brand py-20 text-white">
         <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 sm:px-10 lg:grid-cols-[3fr_2fr] lg:items-start">
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
@@ -496,7 +439,7 @@ export default async function Home() {
               </div>
               <Link
                 href="/blog"
-                className="inline-flex items-center justify-center rounded-xl border border-[#006D77] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#006D77] transition hover:bg-[#006D77] hover:text-white"
+                className="inline-flex items-center justify-center rounded-xl border border-brand px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand transition hover:bg-brand hover:text-white"
               >
                 Bekijk alle blogs
               </Link>
@@ -512,7 +455,7 @@ export default async function Home() {
                   <Link
                     key={blog.id}
                     href={`/blog/${blog.slug}`}
-                    className="group flex h-full flex-col justify-between rounded-3xl border border-neutral-200 bg-white shadow-sm transition hover:border-[#006D77]/50 hover:shadow-md overflow-hidden"
+                    className="group flex h-full flex-col justify-between rounded-3xl border border-neutral-200 bg-white shadow-sm transition hover:border-brand/50 hover:shadow-md overflow-hidden"
                   >
                     {blog.coverImage ? (
                       <div className="relative h-48 w-full overflow-hidden">
@@ -537,7 +480,7 @@ export default async function Home() {
                         {new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium" }).format(blog.publishedAt ?? blog.createdAt)}
                       </p>
                       <p className="text-sm text-neutral-600 line-clamp-3">{summary}{summary.length >= 160 ? "..." : ""}</p>
-                      <span className="mt-2 inline-flex items-center text-xs font-semibold uppercase tracking-[0.3em] text-[#006D77]">
+                      <span className="mt-2 inline-flex items-center text-xs font-semibold uppercase tracking-[0.3em] text-brand">
                         Lees verder →
                       </span>
                     </div>
@@ -564,7 +507,7 @@ export default async function Home() {
               Onderdeel van WeAreImpact
             </p>
             <p>
-              Teambuilding met Impact is onderdeel van <a href="https://weareimpact.nl/" target="_blank" rel="noopener noreferrer" className="text-[#006D77] underline">WeAreImpact</a>,
+              Teambuilding met Impact is onderdeel van <a href="https://weareimpact.nl/" target="_blank" rel="noopener noreferrer" className="text-brand underline">WeAreImpact</a>,
               die organisaties, teams en individuen helpt om meer betekenis te geven aan hun werk en samenwerking.
             </p>
             <p>
@@ -588,7 +531,6 @@ export default async function Home() {
         </div>
       </section>
 
-      <ChatAdvisor />
     </main>
   );
 }

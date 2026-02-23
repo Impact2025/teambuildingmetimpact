@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
@@ -7,6 +8,31 @@ export const metadata: Metadata = {
   title: "LEGO® Serious Play | Teambuilding met Impact",
   description: "Ontdek LEGO® Serious Play: bouw aan inzicht, verbinding en innovatie met deze krachtige methode voor teamontwikkeling.",
   keywords: ["LEGO Serious Play", "LSP", "teamontwikkeling", "innovatie", "strategie", "samenwerking", "facilitator"],
+  alternates: {
+    canonical: "https://www.teambuildingmetimpact.nl/lsp",
+  },
+  openGraph: {
+    title: "LEGO® Serious Play | Teambuilding met Impact",
+    description: "Ontdek LEGO® Serious Play: bouw aan inzicht, verbinding en innovatie met deze krachtige methode voor teamontwikkeling.",
+    url: "https://www.teambuildingmetimpact.nl/lsp",
+    siteName: "Teambuilding met Impact",
+    locale: "nl_NL",
+    type: "website",
+    images: [
+      {
+        url: "https://www.teambuildingmetimpact.nl/images/hero-collaboration.png",
+        width: 1920,
+        height: 1080,
+        alt: "LEGO® Serious Play sessie bij Teambuilding met Impact",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LEGO® Serious Play | Teambuilding met Impact",
+    description: "Ontdek LEGO® Serious Play: bouw aan inzicht, verbinding en innovatie met deze krachtige methode voor teamontwikkeling.",
+    images: ["https://www.teambuildingmetimpact.nl/images/hero-collaboration.png"],
+  },
 };
 
 export default function LspPage() {
@@ -14,9 +40,13 @@ export default function LspPage() {
     <main className="bg-neutral-50 text-neutral-900">
       <section className="relative isolate overflow-hidden bg-neutral-950 text-white">
         <div className="absolute inset-0">
-          <div
-            className="h-full w-full bg-cover bg-center"
-            style={{ backgroundImage: "url('/images/hero-collaboration.png')" }}
+          <Image
+            src="/images/hero-collaboration.png"
+            alt=""
+            fill
+            priority
+            className="object-cover object-center"
+            sizes="100vw"
           />
           <div className="absolute inset-0 bg-neutral-950/70" />
         </div>
@@ -156,14 +186,14 @@ export default function LspPage() {
               </div>
             </div>
             
-            <div className="rounded-3xl border border-[#006D77] bg-[#006D77] p-8 text-white shadow-sm">
+            <div className="rounded-3xl border border-brand bg-brand p-8 text-white shadow-sm">
               <h3 className="text-xl font-semibold">Klaar om samen te bouwen?</h3>
               <p className="mt-4 text-white/90">
                 Wil je ontdekken wat LEGO® Serious Play voor jouw team kan betekenen?
               </p>
               <Link
                 href="#contact"
-                className="mt-6 inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-[#006D77] transition hover:bg-neutral-100"
+                className="mt-6 inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-brand transition hover:bg-neutral-100"
               >
                 Neem contact met ons op
               </Link>

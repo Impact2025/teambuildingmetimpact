@@ -378,9 +378,25 @@ Geef eerst de VOLLEDIGE verrijkte blogtekst (met interne links). Daarna op een n
       throw new Error("OpenRouter leverde geen resultaat");
     }
 
-    const fencedMatch = output.match(/```json([\s\S]*?)```/i);
-    const metadataString = (fencedMatch?.[1] ?? "").trim();
+    // Try multiple extraction strategies for the JSON block
+    const fencedJsonMatch = output.match(/```json\s*([\s\S]*?)```/i);
+    const fencedAnyMatch = output.match(/```\s*(\{[\s\S]*?\})\s*```/i);
+    const lastBraceMatch = (() => {
+      const start = output.lastIndexOf("{");
+      const end = output.lastIndexOf("}");
+      if (start !== -1 && end > start) return output.slice(start, end + 1);
+      return null;
+    })();
+
+    const metadataString = (
+      fencedJsonMatch?.[1] ??
+      fencedAnyMatch?.[1] ??
+      lastBraceMatch ??
+      ""
+    ).trim();
+
     if (!metadataString) {
+      console.error("[AI] enrichBlog: no JSON found in output:", output.slice(0, 500));
       throw new Error("AI-resultaat bevat geen metadata JSON");
     }
 
@@ -388,6 +404,7 @@ Geef eerst de VOLLEDIGE verrijkte blogtekst (met interne links). Daarna op een n
     try {
       metadata = JSON.parse(metadataString);
     } catch {
+      console.error("[AI] enrichBlog: JSON parse failed:", metadataString.slice(0, 200));
       throw new Error("AI metadata kon niet worden geparsed");
     }
 
@@ -403,23 +420,34 @@ Geef eerst de VOLLEDIGE verrijkte blogtekst (met interne links). Daarna op een n
       social_media_post: z.string().optional(),
     });
 
-    const parsedMeta = metaSchema.parse(metadata);
-    const enrichedContent = fencedMatch
-      ? output.slice(0, output.indexOf(fencedMatch[0])).trim()
-      : output.trim();
+    const parsedMeta = metaSchema.safeParse(metadata);
+    if (!parsedMeta.success) {
+      console.error("[AI] enrichBlog: schema validation failed:", parsedMeta.error.issues);
+      throw new Error("AI metadata mist verplichte velden");
+    }
+
+    const jsonBlockStart = fencedJsonMatch
+      ? output.indexOf(fencedJsonMatch[0])
+      : fencedAnyMatch
+      ? output.indexOf(fencedAnyMatch[0])
+      : lastBraceMatch
+      ? output.lastIndexOf(lastBraceMatch)
+      : output.length;
+
+    const enrichedContent = output.slice(0, jsonBlockStart).trim();
 
     return {
       content: enrichedContent,
       metadata: {
-        focusKeyphrase: parsedMeta.focus_keyphrase,
-        metaTitle: parsedMeta.meta_title,
-        metaDescription: parsedMeta.meta_description,
-        slug: slugify(parsedMeta.slug),
-        primaryKeyword: parsedMeta.primary_keyword,
-        extraKeywords: parsedMeta.extra_keywords ?? "",
-        tags: parsedMeta.tags ?? "",
-        midjourneyPrompt: parsedMeta.midjourney_prompt,
-        socialMediaPost: parsedMeta.social_media_post,
+        focusKeyphrase: parsedMeta.data.focus_keyphrase,
+        metaTitle: parsedMeta.data.meta_title,
+        metaDescription: parsedMeta.data.meta_description,
+        slug: slugify(parsedMeta.data.slug),
+        primaryKeyword: parsedMeta.data.primary_keyword,
+        extraKeywords: parsedMeta.data.extra_keywords ?? "",
+        tags: parsedMeta.data.tags ?? "",
+        midjourneyPrompt: parsedMeta.data.midjourney_prompt,
+        socialMediaPost: parsedMeta.data.social_media_post,
       },
     };
   } catch (error) {

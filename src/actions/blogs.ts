@@ -69,7 +69,12 @@ function revalidateBlogPaths(slug?: string) {
 
 export async function createBlogAction(input: z.input<typeof blogSchema>) {
   const admin = await requireAdmin();
-  const parsed = blogSchema.parse(input);
+  const result = blogSchema.safeParse(input);
+  if (!result.success) {
+    const issue = result.error.issues[0];
+    throw new Error(`Validatiefout (${issue.path.join(".")}): ${issue.message}`);
+  }
+  const parsed = result.data;
 
   const slugBase = parsed.slug ?? ensureSlugBase(parsed.title, parsed.primaryKeyword);
   const slug = await ensureUniqueSlug(slugBase);
@@ -103,7 +108,12 @@ export async function createBlogAction(input: z.input<typeof blogSchema>) {
 
 export async function updateBlogAction(id: string, input: z.input<typeof blogSchema>) {
   await requireAdmin();
-  const parsed = blogSchema.parse(input);
+  const result = blogSchema.safeParse(input);
+  if (!result.success) {
+    const issue = result.error.issues[0];
+    throw new Error(`Validatiefout (${issue.path.join(".")}): ${issue.message}`);
+  }
+  const parsed = result.data;
 
   const existing = await prisma.blogPost.findUnique({ where: { id } });
   if (!existing) {
@@ -268,5 +278,155 @@ NOGMAALS: Alle titels (inclusief meta_title) MOETEN in sentence case zijn!`;
       throw new Error(`AI-generatie mislukt: ${error.message}`);
     }
     throw new Error("AI-generatie mislukt");
+  }
+}
+
+const enrichRequestSchema = z.object({
+  title: z.string().optional(),
+  content: z.string().min(50),
+  primaryKeyword: z.string().optional(),
+});
+
+const STATIC_PAGES = [
+  { url: "/", label: "Homepage – Teambuilding met Impact" },
+  { url: "/over-ons", label: "Over ons – wie wij zijn" },
+  { url: "/missie", label: "Onze missie – maatschappelijke impact" },
+  { url: "/programmas", label: "Programma's – ons aanbod teambuilding" },
+  { url: "/lsp", label: "LEGO® Serious Play viewer" },
+  { url: "/blog", label: "Blog – alle artikelen" },
+  { url: "/contact", label: "Contact – offerte aanvragen" },
+];
+
+export async function enrichBlogWithAIAction(input: z.input<typeof enrichRequestSchema>) {
+  await requireAdmin();
+  const parsed = enrichRequestSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new Error("Ongeldige invoer: zorg dat er voldoende content is.");
+  }
+  const { title, content, primaryKeyword } = parsed.data;
+
+  const publishedBlogs = await prisma.blogPost.findMany({
+    where: { status: BlogStatus.PUBLISHED },
+    select: { title: true, slug: true },
+    orderBy: { publishedAt: "desc" },
+    take: 20,
+  });
+
+  const internalLinksContext = [
+    ...STATIC_PAGES.map((p) => `- https://www.teambuildingmetimpact.nl${p.url} (${p.label})`),
+    ...publishedBlogs.map((b) => `- https://www.teambuildingmetimpact.nl/blog/${b.slug} (${b.title})`),
+  ].join("\n");
+
+  const prompt = `Je bent SEO-specialist en contentredacteur voor Teambuilding met Impact. Je taak is een bestaande blogpost te verrijken met wereldklasse SEO en interne links.
+
+## Beschikbare interne links
+${internalLinksContext}
+
+## Blog content om te verrijken
+Titel: ${title ?? "(geen)"}
+Primair keyword (hint): ${primaryKeyword ?? "(bepaal zelf)"}
+
+---
+${content}
+---
+
+## Jouw taken
+
+### 1. Voeg 2–4 interne links toe aan de content
+- Kies alleen links die écht relevant zijn voor de context in de tekst
+- Gebruik Markdown-linksyntax: [ankertekst](url)
+- Verwerk de link natuurlijk in een bestaande zin — voeg geen extra zinnen toe
+- Gebruik beschrijvende ankerteksten (geen "klik hier")
+- Verspreid de links door de tekst
+
+### 2. Genereer SEO-metadata (VERPLICHT in sentence case)
+- focus_keyphrase: de belangrijkste zoekterm (2–4 woorden)
+- meta_title: pakkende titel van max 60 tekens, eindigt op "| Teambuilding met Impact"
+- meta_description: 140–160 tekens, activeert klikgedrag, bevat het keyword
+- slug: url-vriendelijk, lowercase met koppeltekens
+- primary_keyword: het primaire keyword
+- extra_keywords: 4–6 aanvullende keywords, komma-gescheiden
+- tags: 3–5 tags, komma-gescheiden
+- midjourney_prompt: Engelse Midjourney prompt voor een passende afbeelding (mensen, teamwork, warme kleuren, professioneel)
+- social_media_post: LinkedIn/Facebook post van 2–3 zinnen + 3–5 hashtags
+
+### Randvoorwaarden
+- Sentence case voor alle titels (alleen eerste letter hoofdletter, behalve eigennamen)
+- Schrijf niets aan de blogtekst zelf bij behalve de interne links
+
+## Uitvoerformaat
+Geef eerst de VOLLEDIGE verrijkte blogtekst (met interne links). Daarna op een nieuwe regel het metadata-blok als \`\`\`json ...\`\`\`:
+
+\`\`\`json
+{
+  "focus_keyphrase": "...",
+  "meta_title": "...",
+  "meta_description": "...",
+  "slug": "...",
+  "primary_keyword": "...",
+  "extra_keywords": "...",
+  "tags": "...",
+  "midjourney_prompt": "...",
+  "social_media_post": "..."
+}
+\`\`\``;
+
+  try {
+    const output = await generateWithOpenRouter(prompt);
+
+    if (!output) {
+      throw new Error("OpenRouter leverde geen resultaat");
+    }
+
+    const fencedMatch = output.match(/```json([\s\S]*?)```/i);
+    const metadataString = (fencedMatch?.[1] ?? "").trim();
+    if (!metadataString) {
+      throw new Error("AI-resultaat bevat geen metadata JSON");
+    }
+
+    let metadata: unknown;
+    try {
+      metadata = JSON.parse(metadataString);
+    } catch {
+      throw new Error("AI metadata kon niet worden geparsed");
+    }
+
+    const metaSchema = z.object({
+      focus_keyphrase: z.string().min(1),
+      meta_title: z.string().min(1),
+      meta_description: z.string().min(1),
+      slug: z.string().min(1),
+      primary_keyword: z.string().min(1),
+      extra_keywords: z.string().optional(),
+      tags: z.string().optional(),
+      midjourney_prompt: z.string().optional(),
+      social_media_post: z.string().optional(),
+    });
+
+    const parsedMeta = metaSchema.parse(metadata);
+    const enrichedContent = fencedMatch
+      ? output.slice(0, output.indexOf(fencedMatch[0])).trim()
+      : output.trim();
+
+    return {
+      content: enrichedContent,
+      metadata: {
+        focusKeyphrase: parsedMeta.focus_keyphrase,
+        metaTitle: parsedMeta.meta_title,
+        metaDescription: parsedMeta.meta_description,
+        slug: slugify(parsedMeta.slug),
+        primaryKeyword: parsedMeta.primary_keyword,
+        extraKeywords: parsedMeta.extra_keywords ?? "",
+        tags: parsedMeta.tags ?? "",
+        midjourneyPrompt: parsedMeta.midjourney_prompt,
+        socialMediaPost: parsedMeta.social_media_post,
+      },
+    };
+  } catch (error) {
+    console.error("[AI] enrichBlogWithAIAction failed", error);
+    if (error instanceof Error) {
+      throw new Error(`SEO-verrijking mislukt: ${error.message}`);
+    }
+    throw new Error("SEO-verrijking mislukt");
   }
 }

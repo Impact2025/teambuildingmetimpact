@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   createBlogAction,
   deleteBlogAction,
+  enrichBlogWithAIAction,
   generateBlogWithAIAction,
   updateBlogAction,
 } from "@/actions/blogs";
@@ -74,6 +75,7 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
   const [aiFeedback, setAiFeedback] = useState<Feedback | null>(null);
   const [isSaving, startSaving] = useTransition();
   const [isGenerating, startGenerating] = useTransition();
+  const [isEnriching, startEnriching] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadFeedback, setUploadFeedback] = useState<string | null>(null);
@@ -206,6 +208,49 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
     });
   }, [aiState, form.primaryKeyword, startGenerating]);
 
+  const handleEnrich = useCallback(() => {
+    if (!form.content.trim()) {
+      setAiFeedback({ type: "error", message: "Plak eerst de blogtekst in het inhoudsveld." });
+      return;
+    }
+    startEnriching(async () => {
+      setAiFeedback(null);
+      try {
+        const result = await enrichBlogWithAIAction({
+          title: form.title || undefined,
+          content: form.content,
+          primaryKeyword: form.primaryKeyword || aiState.primaryKeyword || undefined,
+        });
+
+        setForm((prev) => ({
+          ...prev,
+          content: result.content,
+          focusKeyphrase: result.metadata.focusKeyphrase,
+          metaTitle: result.metadata.metaTitle,
+          metaDescription: result.metadata.metaDescription,
+          slug: prev.slug || result.metadata.slug,
+          primaryKeyword: result.metadata.primaryKeyword,
+          extraKeywords: result.metadata.extraKeywords,
+          tags: result.metadata.tags,
+          midjourneyPrompt: result.metadata.midjourneyPrompt ?? prev.midjourneyPrompt,
+        }));
+        setSlugTouched(true);
+
+        const lines = [
+          "✅ SEO-velden ingevuld + interne links toegevoegd!",
+          result.metadata.socialMediaPost ? `\n📱 Social media post:\n${result.metadata.socialMediaPost}` : "",
+          result.metadata.midjourneyPrompt ? `\n🎨 Midjourney prompt:\n${result.metadata.midjourneyPrompt}` : "",
+        ].filter(Boolean).join("\n");
+        setAiFeedback({ type: "success", message: lines });
+      } catch (error) {
+        setAiFeedback({
+          type: "error",
+          message: error instanceof Error ? error.message : "SEO-verrijking mislukt.",
+        });
+      }
+    });
+  }, [form.content, form.title, form.primaryKeyword, aiState.primaryKeyword, startEnriching]);
+
   const handleDelete = useCallback(() => {
     if (!form.id) return;
     const confirmed = window.confirm("Weet je zeker dat je deze blog wilt verwijderen?");
@@ -255,7 +300,7 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
     }
   }, []);
 
-  const disableSave = useMemo(() => isSaving || isGenerating || isDeleting, [isDeleting, isGenerating, isSaving]);
+  const disableSave = useMemo(() => isSaving || isGenerating || isEnriching || isDeleting, [isDeleting, isEnriching, isGenerating, isSaving]);
 
   return (
     <form
@@ -510,16 +555,26 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-neutral-900">AI blog generator</h2>
-            <p className="text-sm text-neutral-500">Vul context in en genereer een concept in jullie huisstijl.</p>
+            <p className="text-sm text-neutral-500">Verrijk een bestaande blog met SEO en interne links, of genereer een nieuw concept.</p>
           </div>
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="inline-flex items-center justify-center rounded-xl bg-accent px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-900 shadow-sm transition hover:bg-accent-deep hover:text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
-          >
-            {isGenerating ? "Bezig..." : "Genereer met AI"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleEnrich}
+              disabled={isEnriching || isGenerating}
+              className="inline-flex items-center justify-center rounded-xl bg-brand px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white shadow-sm transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:bg-neutral-300"
+            >
+              {isEnriching ? "Bezig..." : "✦ Verrijk met AI"}
+            </button>
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={isGenerating || isEnriching}
+              className="inline-flex items-center justify-center rounded-xl bg-accent px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-900 shadow-sm transition hover:bg-accent-deep hover:text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+            >
+              {isGenerating ? "Bezig..." : "Genereer met AI"}
+            </button>
+          </div>
         </div>
 
         {aiFeedback ? (

@@ -4,7 +4,7 @@ export async function generateWithOpenRouter(prompt: string): Promise<string> {
     throw new Error("OPENROUTER_API_KEY ontbreekt");
   }
 
-  const model = process.env.OPENROUTER_MODEL ?? "anthropic/claude-3.5-sonnet";
+  const model = process.env.OPENROUTER_MODEL ?? "anthropic/claude-sonnet-4.5";
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",

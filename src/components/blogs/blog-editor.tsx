@@ -103,6 +103,18 @@ export function BlogEditor({ initialState }: { initialState: BlogEditorState }) 
       startSaving(async () => {
         setFeedback(null);
         const finalStatus = statusOverride ?? form.status;
+
+        const errors: string[] = [];
+        if (form.title.trim().length < 3) errors.push("Titel is verplicht (min. 3 tekens)");
+        if (form.focusKeyphrase.trim().length < 3) errors.push("Focus keyphrase is verplicht (min. 3 tekens)");
+        if (form.metaTitle.trim().length < 3) errors.push("Meta title is verplicht (min. 3 tekens)");
+        if (form.metaDescription.trim().length < 10) errors.push("Meta description is verplicht (min. 10 tekens)");
+        if (form.primaryKeyword.trim().length < 3) errors.push("Primair keyword is verplicht (min. 3 tekens)");
+        if (errors.length > 0) {
+          setFeedback({ type: "error", message: errors.join("\n") });
+          return;
+        }
+
         const payload = {
           title: form.title.trim(),
           slug: slugify(form.slug || form.title),

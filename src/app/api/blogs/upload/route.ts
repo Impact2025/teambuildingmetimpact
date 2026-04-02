@@ -1,6 +1,5 @@
+import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 
 import { requireAdmin } from "@/actions/helpers";
 
@@ -27,24 +26,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Bestand is groter dan 10MB" }, { status: 413 });
   }
 
-  // Only allow images
   if (!file.type.startsWith("image/")) {
     return NextResponse.json({ error: "Alleen afbeeldingen zijn toegestaan" }, { status: 400 });
   }
 
   try {
-    const filename = `${Date.now()}-${normaliseFileName(file.name)}`;
-    const uploadsDir = join(process.cwd(), "public", "images", "blog");
+    const filename = `blog/${Date.now()}-${normaliseFileName(file.name)}`;
+    const blob = await put(filename, file, {
+      access: "public",
+      contentType: file.type,
+    });
 
-    // Ensure directory exists
-    await mkdir(uploadsDir, { recursive: true });
-
-    const filepath = join(uploadsDir, filename);
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filepath, buffer);
-
-    const url = `/images/blog/${filename}`;
-    return NextResponse.json({ url });
+    return NextResponse.json({ url: blob.url });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json({ error: "Opslaan in opslag mislukt" }, { status: 500 });

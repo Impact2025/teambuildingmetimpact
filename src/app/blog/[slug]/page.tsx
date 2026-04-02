@@ -10,92 +10,98 @@ type PageProps = {
   params: { slug: string };
 };
 
+function parseInline(text: string, keyPrefix: string): ReactNode {
+  // Strip [Image #N] placeholders
+  text = text.replace(/\[Image #\d+\]/gi, "").trim();
+  if (!text) return null;
+
+  const parts: ReactNode[] = [];
+  // Match [text](url) and **bold**
+  const inlineRegex = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = inlineRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    if (match[1] !== undefined) {
+      // Link: [text](url)
+      parts.push(
+        <a
+          key={`${keyPrefix}-${match.index}`}
+          href={match[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#006D77] underline hover:text-[#005862]"
+        >
+          {match[1]}
+        </a>
+      );
+    } else {
+      // Bold: **text**
+      parts.push(<strong key={`${keyPrefix}-${match.index}`}>{match[3]}</strong>);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  if (parts.length === 0) return null;
+  return parts.length === 1 ? parts[0] : <>{parts}</>;
+}
+
 function renderBlogContent(content: string): ReactNode[] {
   const lines = content.split(/\n+/);
   const elements: ReactNode[] = [];
-  let listBuffer: string[] = [];
-
-  const flushList = () => {
-    if (listBuffer.length > 0) {
-      elements.push(
-        <ul key={`list-${elements.length}`} className="space-y-2 pl-6 text-neutral-700">
-          {listBuffer.map((item, index) => (
-            <li key={index} className="list-disc">
-              {item}
-            </li>
-          ))}
-        </ul>
-      );
-      listBuffer = [];
-    }
-  };
 
   lines.forEach((line) => {
     const trimmed = line.trim();
-    if (!trimmed) {
-      flushList();
-      return;
-    }
-
-    if (trimmed.startsWith("- ")) {
-      listBuffer.push(trimmed.slice(2).trim());
-      return;
-    }
-
-    flushList();
+    if (!trimmed) return;
 
     if (trimmed.startsWith("### ")) {
-      elements.push(
-        <h3 key={elements.length} className="text-xl font-semibold text-neutral-900">
-          {trimmed.slice(4).trim()}
-        </h3>
+      const node = parseInline(trimmed.slice(4).trim(), `h3-${elements.length}`);
+      if (node) elements.push(
+        <h3 key={elements.length} className="text-xl font-semibold text-neutral-900">{node}</h3>
       );
       return;
     }
 
     if (trimmed.startsWith("## ")) {
-      elements.push(
-        <h2 key={elements.length} className="text-2xl font-semibold text-neutral-900">
-          {trimmed.slice(3).trim()}
-        </h2>
+      const node = parseInline(trimmed.slice(3).trim(), `h2-${elements.length}`);
+      if (node) elements.push(
+        <h2 key={elements.length} className="text-2xl font-semibold text-neutral-900">{node}</h2>
       );
       return;
     }
 
     if (trimmed.startsWith("# ")) {
-      elements.push(
-        <h1 key={elements.length} className="text-3xl font-semibold text-neutral-900">
-          {trimmed.slice(2).trim()}
-        </h1>
+      const node = parseInline(trimmed.slice(2).trim(), `h1-${elements.length}`);
+      if (node) elements.push(
+        <h1 key={elements.length} className="text-3xl font-semibold text-neutral-900">{node}</h1>
       );
       return;
     }
 
+    // Strip leading "- " bullet markers
+    const text = trimmed.startsWith("- ") ? trimmed.slice(2).trim() : trimmed;
+    const node = parseInline(text, `p-${elements.length}`);
+    if (!node) return;
+
     if (trimmed.toLowerCase().startsWith("bron:")) {
-      const match = trimmed.match(/\[([^\]]*)\]/);
-      const link = match?.[1]?.trim();
       elements.push(
-        <p key={elements.length} className="text-sm text-neutral-600">
-          Bron: {link ? (
-            <a href={link} target="_blank" rel="noopener noreferrer" className="text-[#006D77] underline">
-              {link}
-            </a>
-          ) : (
-            "-"
-          )}
-        </p>
+        <p key={elements.length} className="text-sm text-neutral-600">{node}</p>
       );
       return;
     }
 
     elements.push(
-      <p key={elements.length} className="text-base leading-relaxed text-neutral-700">
-        {trimmed}
-      </p>
+      <p key={elements.length} className="text-base leading-relaxed text-neutral-700">{node}</p>
     );
   });
 
-  flushList();
   return elements;
 }
 

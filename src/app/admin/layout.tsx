@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { AdminNav } from "@/components/admin/admin-nav";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 type AdminLayoutProps = {
   children: ReactNode;

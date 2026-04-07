@@ -459,11 +459,12 @@ export default async function Home() {
                   >
                     {blog.coverImage ? (
                       <div className="relative h-48 w-full overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                           src={blog.coverImage}
                           alt={blog.title}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          fill
+                          sizes="(max-width: 1024px) 100vw, 33vw"
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                         <h3 className="absolute bottom-4 left-4 right-4 text-lg font-semibold text-white line-clamp-2">

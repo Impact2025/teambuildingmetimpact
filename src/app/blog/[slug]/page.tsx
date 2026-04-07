@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -134,6 +135,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         ? [
             {
               url: blog.coverImage,
+              width: 1200,
+              height: 630,
               alt: blog.title,
             },
           ]
@@ -224,12 +227,14 @@ export default async function BlogDetailPage({ params }: PageProps) {
             </div>
 
             {blog.coverImage ? (
-              <div className="overflow-hidden rounded-3xl">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+              <div className="relative h-96 w-full overflow-hidden rounded-3xl">
+                <Image
                   src={blog.coverImage}
                   alt={blog.title}
-                  className="h-96 w-full object-cover object-center"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 800px"
+                  className="object-cover object-center"
+                  priority
                 />
               </div>
             ) : null}

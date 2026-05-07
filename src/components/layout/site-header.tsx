@@ -8,6 +8,7 @@ const navLinks = [
   { href: "/over-ons", label: "Over ons" },
   { href: "/missie", label: "Onze missie" },
   { href: "/programmas", label: "Programma\u2019s" },
+  { href: "/ictusgo", label: "IctusGo" },
   { href: "/viewer", label: "LEGO\u00ae Viewer" },
   { href: "/blog", label: "Blog" },
 ];

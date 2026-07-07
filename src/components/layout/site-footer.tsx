@@ -26,7 +26,7 @@ export function SiteFooter() {
             <p className="text-sm text-neutral-600">
               Onderdeel van{" "}
               <a
-                href="https://weareimpact.nl/"
+                href="https://weareimpact.nl/programmamanager-digitale-transformatie"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-brand underline hover:text-brand-dark"

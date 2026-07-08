@@ -58,12 +58,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Blog posts
+  // Blog posts — differentiate priority: pillar posts slightly higher
+  const pillarSlugs = new Set([
+    "welk-programma-past-bij-jouw-team",
+    "maatschappelijke-impact-teamdag-meten",
+    "teamdag-organiseren-checklist",
+    "zinvolle-teambuilding-organiseren",
+    "teamdag-die-de-buurt-raakt",
+  ]);
   const blogRoutes: MetadataRoute.Sitemap = blogs.map((blog) => ({
     url: `${BASE_URL}/blog/${blog.slug}`,
     lastModified: blog.updatedAt ?? blog.publishedAt ?? today,
     changeFrequency: "monthly" as const,
-    priority: 0.6,
+    priority: pillarSlugs.has(blog.slug) ? 0.7 : 0.6,
   }));
 
   return [...staticRoutes, ...blogRoutes];

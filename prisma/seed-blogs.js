@@ -77,6 +77,13 @@ function cleanBody(body) {
     if (/^#\s+/.test(trimmed)) continue;
     // drop trailing author byline(s)
     if (/^Vincent van Munster,?\s*oprichter/i.test(trimmed)) continue;
+    // Convert raw HTML anchors <a href="url" ...>text</a> -> [text](url)
+    line = line.replace(
+      /<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/gi,
+      (_, url, text) => `[${text.trim()}](url)`
+    );
+    // strip any leftover HTML tags (defensive)
+    line = line.replace(/<[^>]+>/g, "");
     // strip inline target="_blank" attributes (parser adds these itself)
     line = line.replace(/\{\s*target\s*=\s*["']_blank["']\s*\}/g, "");
     // also catch a stray unbalanced one
@@ -106,7 +113,7 @@ async function seedBlogs() {
   const posts = [];
   for (const file of files) {
     const raw = fs.readFileSync(path.join(BLOG_SOURCE_DIR, file), "utf8");
-    const m = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+    const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
     if (!m) {
       console.warn(`⚠️  Geen frontmatter in ${file} — overgeslagen.`);
       continue;

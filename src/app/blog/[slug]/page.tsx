@@ -58,9 +58,59 @@ function renderBlogContent(content: string): ReactNode[] {
   const lines = content.split(/\n+/);
   const elements: ReactNode[] = [];
 
+  let listBuffer: { type: "ol" | "ul"; items: ReactNode[] } | null = null;
+
+  const flushList = () => {
+    if (!listBuffer) return;
+    const key = `list-${elements.length}`;
+    if (listBuffer.type === "ol") {
+      elements.push(
+        <ol key={key} className="list-decimal list-inside space-y-1 text-base leading-relaxed text-neutral-700">
+          {listBuffer.items}
+        </ol>
+      );
+    } else {
+      elements.push(
+        <ul key={key} className="list-disc list-inside space-y-1 text-base leading-relaxed text-neutral-700">
+          {listBuffer.items}
+        </ul>
+      );
+    }
+    listBuffer = null;
+  };
+
   lines.forEach((line) => {
     const trimmed = line.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      flushList();
+      return;
+    }
+
+    // Numbered list item: "1. text"
+    const orderedMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+    if (orderedMatch) {
+      if (!listBuffer || listBuffer.type !== "ol") {
+        flushList();
+        listBuffer = { type: "ol", items: [] };
+      }
+      const node = parseInline(orderedMatch[1].trim(), `li-${elements.length}-${listBuffer.items.length}`);
+      if (node) listBuffer.items.push(<li key={`li-${elements.length}-${listBuffer.items.length}`}>{node}</li>);
+      return;
+    }
+
+    // Bullet list item: "- text"
+    if (trimmed.startsWith("- ")) {
+      if (!listBuffer || listBuffer.type !== "ul") {
+        flushList();
+        listBuffer = { type: "ul", items: [] };
+      }
+      const node = parseInline(trimmed.slice(2).trim(), `li-${elements.length}-${listBuffer.items.length}`);
+      if (node) listBuffer.items.push(<li key={`li-${elements.length}-${listBuffer.items.length}`}>{node}</li>);
+      return;
+    }
+
+    // Any other line flushes an open list and renders as a block element
+    flushList();
 
     if (trimmed.startsWith("### ")) {
       const node = parseInline(trimmed.slice(4).trim(), `h3-${elements.length}`);
@@ -86,9 +136,7 @@ function renderBlogContent(content: string): ReactNode[] {
       return;
     }
 
-    // Strip leading "- " bullet markers
-    const text = trimmed.startsWith("- ") ? trimmed.slice(2).trim() : trimmed;
-    const node = parseInline(text, `p-${elements.length}`);
+    const node = parseInline(trimmed, `p-${elements.length}`);
     if (!node) return;
 
     if (trimmed.toLowerCase().startsWith("bron:")) {
@@ -102,6 +150,8 @@ function renderBlogContent(content: string): ReactNode[] {
       <p key={elements.length} className="text-base leading-relaxed text-neutral-700">{node}</p>
     );
   });
+
+  flushList();
 
   return elements;
 }

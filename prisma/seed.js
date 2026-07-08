@@ -149,6 +149,15 @@ async function main() {
   }
 
   console.log(`✅ ${reviewsData.length} teamdag reviews aangemaakt (${reviewsData.filter(r => r.status === "APPROVED").length} goedgekeurd, ${reviewsData.filter(r => r.status === "PENDING").length} in behandeling)`);
+
+  // Seed blog posts from markdown (idempotent upsert by slug)
+  try {
+    const { seedBlogs } = require("./seed-blogs.js");
+    const blogResult = await seedBlogs();
+    console.log(`✅ Blog-seed klaar: ${blogResult.created} nieuw, ${blogResult.updated} bijgewerkt.`);
+  } catch (blogErr) {
+    console.error("⚠️  Blog-seed overgeslagen:", blogErr.message);
+  }
 }
 
 main()

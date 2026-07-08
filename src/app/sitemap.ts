@@ -71,6 +71,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: blog.updatedAt ?? blog.publishedAt ?? today,
     changeFrequency: "monthly" as const,
     priority: pillarSlugs.has(blog.slug) ? 0.7 : 0.6,
+    images: [`${BASE_URL}/blog/${blog.slug}/opengraph-image`],
   }));
 
   return [...staticRoutes, ...blogRoutes];

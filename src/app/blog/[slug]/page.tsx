@@ -181,22 +181,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: blog.metaDescription,
       type: "article",
       url: `https://www.teambuildingmetimpact.nl/blog/${blog.slug}`,
-      images: blog.coverImage
-        ? [
-            {
-              url: blog.coverImage,
-              width: 1200,
-              height: 630,
-              alt: blog.title,
-            },
-          ]
-        : undefined,
+      images: [
+        {
+          url: `/blog/${blog.slug}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: blog.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: blog.metaTitle,
       description: blog.metaDescription,
-      images: blog.coverImage ? [blog.coverImage] : undefined,
+      images: [`/blog/${blog.slug}/opengraph-image`],
     },
   };
 }
@@ -250,12 +248,58 @@ export default async function BlogDetailPage({ params }: PageProps) {
     keywords: [blog.primaryKeyword, blog.extraKeywords, blog.tags].filter(Boolean).join(", "),
   };
 
+  // FAQPage structured data for the dedicated FAQ post (rich-result eligible)
+  const isFaqPost = blog.slug === "veelgestelde-vragen-maatschappelijke-teambuilding";
+  const faqSchema = isFaqPost
+    ? (() => {
+        const lines = blog.content.split("\n");
+        const pairs: { q: string; a: string }[] = [];
+        let currentQ: string | null = null;
+        let currentA: string[] = [];
+        const flush = () => {
+          if (currentQ && currentA.length) {
+            pairs.push({ q: currentQ, a: currentA.join(" ").trim() });
+          }
+          currentQ = null;
+          currentA = [];
+        };
+        for (const line of lines) {
+          const h3 = line.match(/^###\s+(.*)$/);
+          if (h3) {
+            flush();
+            currentQ = h3[1].trim();
+          } else if (currentQ) {
+            const t = line.trim();
+            if (t) currentA.push(t);
+          }
+        }
+        flush();
+        return pairs.length
+          ? {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: pairs.map((p) => ({
+                "@type": "Question",
+                name: p.q,
+                acceptedAnswer: { "@type": "Answer", text: p.a },
+              })),
+            }
+          : null;
+      })()
+    : null;
+
   return (
     <main className="bg-neutral-50 py-16 text-neutral-900">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingSchema) }}
       />
+      {faqSchema ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      ) : null}
       <div className="mx-auto w-full max-w-7xl px-6 sm:px-10">
         <Breadcrumbs
           items={[
@@ -287,7 +331,19 @@ export default async function BlogDetailPage({ params }: PageProps) {
                   priority
                 />
               </div>
-            ) : null}
+            ) : (
+              // No uploaded cover: render the on-brand dynamic share card as hero
+              <div className="relative h-96 w-full overflow-hidden rounded-3xl">
+                <Image
+                  src={`/blog/${blog.slug}/opengraph-image`}
+                  alt={blog.title}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 800px"
+                  className="object-cover object-center"
+                  priority
+                />
+              </div>
+            )}
 
             <article className="space-y-6">
               {contentElements}

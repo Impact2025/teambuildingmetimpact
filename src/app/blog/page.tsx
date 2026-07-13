@@ -63,7 +63,14 @@ export default async function BlogIndexPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {items.map((blog) => {
-              const excerpt = blog.excerpt ?? blog.content.replace(/#+\s?/g, "").replace(/\*\*/g, "").replace(/\s+/g, " ").trim().slice(0, 160);
+              const plainContent = (blog.content || "")
+                .replace(/<[^>]+>/g, "") // HTML-tags verwijderen
+                .replace(/#+\s?/g, "")
+                .replace(/\*\*/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+              const excerpt =
+                (blog.excerpt || "").trim() || plainContent.slice(0, 160);
               return (
                 <Link
                   key={blog.id}
@@ -93,7 +100,7 @@ export default async function BlogIndexPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent-deep">
                       {new Intl.DateTimeFormat("nl-NL", { dateStyle: "medium" }).format(blog.publishedAt ?? blog.createdAt)}
                     </p>
-                    <p className="text-sm text-neutral-600 line-clamp-3">{excerpt}{excerpt.length >= 160 ? "..." : ""}</p>
+                    <p className="text-sm text-neutral-600 line-clamp-3">{excerpt}{plainContent.length > 160 && excerpt.length >= 160 ? "..." : ""}</p>
                     <span className="mt-2 inline-flex items-center text-xs font-semibold uppercase tracking-[0.3em] text-[#006D77]">
                       Lees verder →
                     </span>
